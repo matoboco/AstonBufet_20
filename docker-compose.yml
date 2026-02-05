@@ -1,7 +1,6 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: bufet-db
     environment:
       POSTGRES_USER: bufet
       POSTGRES_PASSWORD: secret
@@ -18,7 +17,6 @@ services:
 
   backend:
     build: ./backend
-    container_name: bufet-backend
     environment:
       DATABASE_URL: postgresql://bufet:secret@db:5432/bufet
       JWT_SECRET: your-32-character-secret-key-here
@@ -35,7 +33,6 @@ services:
 
   frontend:
     build: ./frontend
-    container_name: bufet-frontend
     ports:
       - "8980:80"
     depends_on:
@@ -46,7 +43,6 @@ services:
 
   reminder:
     build: ./backend
-    container_name: bufet-reminder
     command: ["node", "dist/reminder.js"]
     environment:
       DATABASE_URL: postgresql://bufet:secret@db:5432/bufet
