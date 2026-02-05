@@ -1,0 +1,294 @@
+{
+  "product": {
+    "name": "Firemný Bufet",
+    "version": "1.0",
+    "description": "Interná PWA aplikácia pre firemný bufet s nákupom na účet, FIFO skladom, vyúčtovaním a automatickými pripomienkami",
+    "type": "PWA",
+    "target_users": 50
+  },
+  
+  "tech_stack": {
+    "frontend": {
+      "framework": "React 18 + TypeScript",
+      "build_tool": "Vite",
+      "styling": "Tailwind CSS",
+      "pwa_plugin": "vite-plugin-pwa",
+      "barcode_scanner": "@zxing/library + react-webcam"
+    },
+    "backend": {
+      "runtime": "Node.js",
+      "framework": "Express",
+      "database": "PostgreSQL 16",
+      "auth": "JWT (1 rok)",
+      "email": "Nodemailer",
+      "validation": "Zod",
+      "cron": "node-cron"
+    },
+    "deployment": {
+      "docker": "Docker Compose (FE+BE+DB+reminder)",
+      "hosting": "Synology NAS"
+    }
+  },
+  
+  "database_schema": {
+    "tables": [
+      {
+        "name": "users",
+        "columns": [
+          {"name": "id", "type": "UUID", "primary_key": true},
+          {"name": "email", "type": "TEXT", "unique": true},
+          {"name": "role", "type": "TEXT", "default": "'user'", "check": "IN ('user', 'office_assistant')"},
+          {"name": "token_version", "type": "INTEGER", "default": 1},
+          {"name": "created_at", "type": "TIMESTAMP", "default": "NOW()"}
+        ]
+      },
+      {
+        "name": "products",
+        "columns": [
+          {"name": "id", "type": "UUID", "primary_key": true},
+          {"name": "name", "type": "TEXT"},
+          {"name": "ean", "type": "TEXT", "unique": true},
+          {"name": "price_cents", "type": "INTEGER"},
+          {"name": "created_at", "type": "TIMESTAMP", "default": "NOW()"}
+        ]
+      },
+      {
+        "name": "stock_batches",
+        "columns": [
+          {"name": "id", "type": "UUID", "primary_key": true},
+          {"name": "product_id", "type": "UUID", "foreign_key": "products.id"},
+          {"name": "quantity", "type": "INTEGER"},
+          {"name": "price_cents", "type": "INTEGER"},
+          {"name": "created_at", "type": "TIMESTAMP", "default": "NOW()"}
+        ],
+        "description": "FIFO inventory batches"
+      },
+      {
+        "name": "account_entries",
+        "columns": [
+          {"name": "id", "type": "UUID", "primary_key": true},
+          {"name": "user_id", "type": "UUID", "foreign_key": "users.id"},
+          {"name": "amount_cents", "type": "INTEGER", "description": "záporné=nákup, kladné=platba"},
+          {"name": "description", "type": "TEXT"},
+          {"name": "created_at", "type": "TIMESTAMP", "default": "NOW()"}
+        ],
+        "description": "Running account ledger"
+      },
+      {
+        "name": "login_codes",
+        "columns": [
+          {"name": "id", "type": "UUID", "primary_key": true},
+          {"name": "email", "type": "TEXT"},
+          {"name": "code", "type": "TEXT"},
+          {"name": "expires_at", "type": "TIMESTAMP"},
+          {"name": "used", "type": "BOOLEAN", "default": false}
+        ]
+      }
+    ],
+    "views": [
+      {
+        "name": "account_balances",
+        "query": "SELECT u.id, u.email, u.role, COALESCE(SUM(e.amount_cents)/100.0, 0) as balance_eur FROM users u LEFT JOIN account_entries e ON u.id = e.user_id GROUP BY u.id",
+        "description": "Aktuálne zostatky účtov"
+      },
+      {
+        "name": "account_history",
+        "query": "SELECT e.*, u.email, SUM(e.amount_cents) OVER (PARTITION BY e.user_id ORDER BY e.created_at)/100.0 as running_balance_eur FROM account_entries e JOIN users u ON e.user_id = u.id",
+        "description": "História s priebežným stavom"
+      }
+    ]
+  },
+  
+  "user_roles": {
+    "user": [
+      "Nákup tovaru (skener EAN / zoznam)",
+      "Zobrazenie svojho zostatku a histórie"
+    ],
+    "office_assistant": [
+      "Správa skladu (FIFO batch pridávanie)",
+      "Vyúčtovanie dlžníkov (deposity)",
+      "Pripomienky dlhu (manual + auto)",
+      "Prehľad všetkých účtov"
+    ]
+  },
+  
+  "user_flows": {
+    "login": [
+      "Zadaj firemný email",
+      "OTP kód (10 min platnosť)",
+      "JWT token (1 rok)"
+    ],
+    "purchase": [
+      "GET /products alebo sken EAN",
+      "FIFO alokácia zo stock_batches",
+      "INSERT account_entries (amount_cents = -total)",
+      "Refresh balance"
+    ],
+    "add_stock": [
+      "Sken EAN → GET /products/by-ean",
+      "Ak nový: zadaj name, qty, price",
+      "POST /stock/add-batch → nový FIFO batch"
+    ],
+    "settlement": [
+      "GET /account/balances → dlžníci (-balance)",
+      "GET /account/history/:user → detail",
+      "POST /account/deposit → +amount do ledger"
+    ],
+    "reminders": [
+      "CRON: 1. deň mesiaca 9:00",
+      "Email všetkým s balance < -5€",
+      "Manual: POST /admin/reminder"
+    ]
+  },
+  
+  "api_endpoints": [
+    {
+      "method": "POST",
+      "path": "/auth/request-code",
+      "body": "{email}",
+      "auth": "none",
+      "description": "Poslať OTP kód"
+    },
+    {
+      "method": "POST",
+      "path": "/auth/verify-code",
+      "body": "{email, code}",
+      "auth": "none",
+      "description": "Vydaj JWT token s rolou"
+    },
+    {
+      "method": "POST",
+      "path": "/purchases",
+      "body": "{product_id, quantity}",
+      "auth": "user",
+      "description": "Nákup + FIFO + ledger entry"
+    },
+    {
+      "method": "POST",
+      "path": "/stock/add-batch",
+      "body": "{ean, name?, quantity, price_cents}",
+      "auth": "office_assistant",
+      "description": "Pridať nový FIFO batch"
+    },
+    {
+      "method": "POST",
+      "path": "/account/deposit",
+      "body": "{user_id, amount_cents, note?}",
+      "auth": "office_assistant",
+      "description": "Platba / vyrovnanie dlhu"
+    },
+    {
+      "method": "GET",
+      "path": "/account/balances",
+      "auth": "user (svoj) / office_assistant (všetci)",
+      "description": "Aktuálne zostatky"
+    },
+    {
+      "method": "GET",
+      "path": "/account/history/:user_id",
+      "auth": "self or office_assistant",
+      "description": "História transakcií"
+    },
+    {
+      "method": "GET",
+      "path": "/products/by-ean/:ean",
+      "auth": "none",
+      "description": "Produkt podľa EAN"
+    },
+    {
+      "method": "POST",
+      "path": "/admin/reminder",
+      "auth": "office_assistant",
+      "description": "Poslať pripomienky"
+    }
+  ],
+  
+  "frontend_screens": [
+    {
+      "name": "Login",
+      "components": ["EmailInput", "OTPInput", "SubmitButton"]
+    },
+    {
+      "name": "Dashboard",
+      "components": [
+        "BalanceCard (balance_eur - červená/zelená)",
+        "RecentTransactions (5 položiek)",
+        "QuickActions (Nákup, Skenovať)"
+      ]
+    },
+    {
+      "name": "Products",
+      "components": ["SearchBar", "ProductGrid", "BarcodeScannerModal"]
+    },
+    {
+      "name": "OfficeDashboard",
+      "components": [
+        "DebtorsTable (email, balance_eur)",
+        "StockManagement",
+        "SendRemindersButton"
+      ],
+      "role": "office_assistant"
+    }
+  ],
+  
+  "pwa_features": {
+    "manifest": {
+      "name": "Firemný Bufet",
+      "short_name": "Bufet",
+      "icons": ["512x512.png"],
+      "theme_color": "#10b981",
+      "installable": true
+    },
+    "service_worker": {
+      "cache": ["/products", "/manifest.json"],
+      "offline_support": "Produkty + UI"
+    }
+  },
+  
+  "deployment": {
+    "docker_compose": {
+      "services": ["db", "backend", "frontend", "reminder"],
+      "ports": {
+        "frontend": "3000:3000",
+        "backend": "3001:3001",
+        "postgres": "5432:5432"
+      }
+    },
+    "environment": {
+      "DATABASE_URL": "postgresql://bufet:secret@db:5432/bufet",
+      "JWT_SECRET": "32-char-secret-key",
+      "SMTP_HOST": "smtp.company.sk"
+    }
+  },
+  
+  "non_functional": {
+    "security": {
+      "auth": "JWT Bearer + role RBAC",
+      "transactions": "Atomické operácie",
+      "https": "Povinné pre kameru"
+    },
+    "performance": {
+      "ean_lookup": "<50ms index",
+      "balance_calc": "Window function optimized"
+    },
+    "availability": "99% (PWA offline)"
+  },
+  
+  "seed_data": {
+    "office_assistant": "assistant@company.sk",
+    "test_products": [
+      {"name": "Káva", "ean": "1234567890123", "price_cents": 120},
+      {"name": "Sendvič", "ean": "9876543210987", "price_cents": 250}
+    ]
+  },
+  
+  "rollout_plan": [
+    "1. Local Docker dev environment",
+    "2. Synology test deploy", 
+    "3. User migration + FIFO test",
+    "4. Production + cron setup"
+  ],
+  
+  "created": "2026-02-05",
+  "status": "Ready for implementation"
+}

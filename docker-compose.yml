@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: bufet-db
+    environment:
+      POSTGRES_USER: bufet
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: bufet
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bufet"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: bufet-backend
+    environment:
+      DATABASE_URL: postgresql://bufet:secret@db:5432/bufet
+      JWT_SECRET: your-32-character-secret-key-here
+      SMTP_MODE: console
+      PORT: 3001
+      CORS_ORIGIN: http://localhost:3000
+      RUN_MIGRATIONS: "true"
+      OFFICE_ASSISTANT_EMAILS: "assistant@company.sk"
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: bufet-frontend
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  reminder:
+    build: ./backend
+    container_name: bufet-reminder
+    command: ["node", "dist/reminder.js"]
+    environment:
+      DATABASE_URL: postgresql://bufet:secret@db:5432/bufet
+      SMTP_MODE: console
+      RUN_MIGRATIONS: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
