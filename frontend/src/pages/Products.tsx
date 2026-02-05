@@ -31,6 +31,14 @@ export const Products = () => {
     fetchProducts();
   }, []);
 
+  // Auto-dismiss error messages after 5 seconds
+  useEffect(() => {
+    if (message?.type === 'error') {
+      const timer = setTimeout(() => setMessage(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   useEffect(() => {
     if (searchParams.get('scan') === 'true') {
       setShowScanner(true);
@@ -124,7 +132,10 @@ export const Products = () => {
           </div>
           <button
             className="btn btn-primary p-3"
-            onClick={() => setShowScanner(true)}
+            onClick={() => {
+              setMessage(null);
+              setShowScanner(true);
+            }}
           >
             <svg
               className="w-6 h-6"
@@ -146,15 +157,15 @@ export const Products = () => {
       {/* Message */}
       {message && (
         <div
-          className={`mx-4 mt-4 p-3 rounded-lg ${
+          className={`mx-4 mt-4 p-3 rounded-lg flex items-start justify-between gap-2 ${
             message.type === 'success'
               ? 'bg-green-100 text-green-700'
               : 'bg-red-100 text-red-700'
           }`}
         >
-          {message.text}
+          <span className="flex-1">{message.text}</span>
           <button
-            className="float-right font-bold"
+            className="w-8 h-8 flex items-center justify-center font-bold text-xl shrink-0 -mr-1 -mt-1 hover:bg-black/10 rounded"
             onClick={() => setMessage(null)}
           >
             ×
