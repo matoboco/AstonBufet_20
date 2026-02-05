@@ -79,14 +79,17 @@ export const Products = () => {
         text: `Nákup úspešný: ${quantity}x ${selectedProduct.name} za ${Number(result.purchase.total_eur).toFixed(2)} €`,
       });
 
-      // Refresh products to update stock
-      await fetchProducts();
+      // Close modal immediately after successful purchase
+      setPurchasing(false);
+      setSelectedProduct(null);
+
+      // Refresh products in background to update stock
+      fetchProducts();
     } catch (error) {
       setMessage({
         type: 'error',
         text: error instanceof Error ? error.message : 'Nákup sa nepodaril',
       });
-    } finally {
       setPurchasing(false);
       setSelectedProduct(null);
     }
