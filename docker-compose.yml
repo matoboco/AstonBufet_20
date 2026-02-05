@@ -37,7 +37,7 @@ services:
     build: ./frontend
     container_name: bufet-frontend
     ports:
-      - "80:80"
+      - "8980:80"
     depends_on:
       - backend
     restart: unless-stopped
