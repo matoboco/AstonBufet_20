@@ -14,9 +14,9 @@ build-frontend:
       echo "Frontend version: $version"
       cd ..
 
-      docker build -t $REGISTRY/$PROJECT/frontend:$version -t $REGISTRY/$PROJECT/frontend:latest ./frontend
-      docker push $REGISTRY/$PROJECT/frontend:$version
-      docker push $REGISTRY/$PROJECT/frontend:latest
+      docker build -t $REGISTRY/$PROJECT/aston-bufet-fe:$version -t $REGISTRY/$PROJECT/aston-bufet-fe:latest ./frontend
+      docker push $REGISTRY/$PROJECT/aston-bufet-fe:$version
+      docker push $REGISTRY/$PROJECT/aston-bufet-fe:latest
   tags:
     - build53
 
@@ -29,8 +29,8 @@ build-backend:
       echo "Backend version: $version"
       cd ..
 
-      docker build -t $REGISTRY/$PROJECT/backend:$version -t $REGISTRY/$PROJECT/backend:latest ./backend
-      docker push $REGISTRY/$PROJECT/backend:$version
-      docker push $REGISTRY/$PROJECT/backend:latest
+      docker build -t $REGISTRY/$PROJECT/aston-bufet-be:$version -t $REGISTRY/$PROJECT/aston-bufet-be:latest ./backend
+      docker push $REGISTRY/$PROJECT/aston-bufet-be:$version
+      docker push $REGISTRY/$PROJECT/aston-bufet-be:latest
   tags:
     - build53
