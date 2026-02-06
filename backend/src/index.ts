@@ -99,7 +99,7 @@ const start = async () => {
     app.listen(PORT, () => {
       console.log(`
 ╔════════════════════════════════════════════╗
-║     Firemný Bufet Backend API              ║
+║     Aston Bufet 2.0 Backend API            ║
 ║     Running on port ${PORT}                    ║
 ╚════════════════════════════════════════════╝
       `);

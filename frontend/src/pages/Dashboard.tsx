@@ -41,7 +41,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
       {/* Header */}
       <header className="bg-primary-500 text-white p-4 pt-safe">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Firemný Bufet</h1>
+          <h1 className="text-xl font-bold">Aston Bufet 2.0</h1>
           <button
             onClick={onLogout}
             className="p-2 hover:bg-white/10 rounded-full"

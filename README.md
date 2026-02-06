@@ -1,4 +1,4 @@
-# Firemný Bufet
+# Aston Bufet 2.0
 
 Webová aplikácia (PWA) pre správu firemného bufetu s automatickým účtovaním nákupov a správou skladu.
 

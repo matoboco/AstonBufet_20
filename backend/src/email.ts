@@ -31,10 +31,10 @@ const createTransporter = () => {
 const transporter = createTransporter();
 
 export const sendOTPEmail = async (email: string, code: string): Promise<void> => {
-  const subject = 'Firemný Bufet - Prihlasovací kód';
+  const subject = 'Aston Bufet 2.0 - Prihlasovací kód';
   const text = `Váš prihlasovací kód je: ${code}\n\nKód je platný 10 minút.`;
   const html = `
-    <h2>Firemný Bufet</h2>
+    <h2>Aston Bufet 2.0</h2>
     <p>Váš prihlasovací kód je:</p>
     <h1 style="font-size: 32px; letter-spacing: 8px; color: #10b981;">${code}</h1>
     <p>Kód je platný 10 minút.</p>
@@ -69,15 +69,15 @@ export const sendReminderEmail = async (
   balanceEur: number | string
 ): Promise<void> => {
   const balance = Number(balanceEur);
-  const subject = 'Firemný Bufet - Pripomienka dlhu';
-  const text = `Dobrý deň,\n\nVáš aktuálny zostatok v bufete je: ${balance.toFixed(2)} €\n\nNezabudnite si prosím vyrovnať dlh u office asistentky.\n\nĎakujeme,\nFiremný Bufet`;
+  const subject = 'Aston Bufet 2.0 - Pripomienka dlhu';
+  const text = `Dobrý deň,\n\nVáš aktuálny zostatok v bufete je: ${balance.toFixed(2)} €\n\nNezabudnite si prosím vyrovnať dlh u office asistentky.\n\nĎakujeme,\nAston Bufet 2.0`;
   const html = `
-    <h2>Firemný Bufet - Pripomienka</h2>
+    <h2>Aston Bufet 2.0 - Pripomienka</h2>
     <p>Dobrý deň,</p>
     <p>Váš aktuálny zostatok v bufete je:</p>
     <h1 style="font-size: 28px; color: #ef4444;">${balance.toFixed(2)} €</h1>
     <p>Nezabudnite si prosím vyrovnať dlh u office asistentky.</p>
-    <p>Ďakujeme,<br/>Firemný Bufet</p>
+    <p>Ďakujeme,<br/>Aston Bufet 2.0</p>
   `;
 
   if (isConsoleMode) {

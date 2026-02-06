@@ -62,7 +62,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
         <div className="p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Firemný Bufet</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Aston Bufet 2.0</h1>
             <p className="text-gray-500 mt-2">
               {step === 'email'
                 ? 'Prihláste sa pomocou firemného emailu'

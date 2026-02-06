@@ -57,7 +57,7 @@ if (isMainModule) {
     // Schedule cron job: 1st day of month at 9:00
     console.log(`
 ╔════════════════════════════════════════════╗
-║     Firemný Bufet Reminder Service         ║
+║     Aston Bufet 2.0 Reminder Service       ║
 ║     Schedule: 1st of month at 9:00         ║
 ╚════════════════════════════════════════════╝
     `);
