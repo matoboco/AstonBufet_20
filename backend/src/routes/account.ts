@@ -150,7 +150,16 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
 
     // Use the later of: user creation date or last acknowledgement
     // This ensures new users don't see historical shortages from before they joined
-    const cutoffDate = lastAck?.acknowledged_at || user?.created_at || new Date();
+    let cutoffDate: Date;
+    if (lastAck?.acknowledged_at) {
+      cutoffDate = new Date(lastAck.acknowledged_at);
+    } else if (user?.created_at) {
+      cutoffDate = new Date(user.created_at);
+    } else {
+      cutoffDate = new Date();
+    }
+
+    console.log(`Shortage warning for user ${req.user!.email}: cutoff=${cutoffDate.toISOString()}, user_created=${user?.created_at}, last_ack=${lastAck?.acknowledged_at}`);
 
     // Get total shortage (negative differences) since cutoff date
     // Exclude write-offs (intentional removals like expired goods)
@@ -161,12 +170,12 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
         MIN(sa.created_at) as first_shortage_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
-      WHERE sa.difference < 0 AND sa.created_at > $1 AND (sa.is_write_off = FALSE OR sa.is_write_off IS NULL)
+      WHERE sa.difference < 0 AND sa.created_at > $1::timestamptz AND (sa.is_write_off = FALSE OR sa.is_write_off IS NULL)
     `;
 
     const shortageResult = await queryOne<{ total_shortage: number; total_value_cents: number; first_shortage_at: Date | null }>(
       shortageQuery,
-      [cutoffDate]
+      [cutoffDate.toISOString()]
     );
 
     const totalShortage = Number(shortageResult?.total_shortage) || 0;
@@ -182,13 +191,13 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
       SELECT p.name as product_name, sa.difference, p.price_cents, sa.created_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
-      WHERE sa.difference < 0 AND sa.created_at > $1 AND (sa.is_write_off = FALSE OR sa.is_write_off IS NULL)
+      WHERE sa.difference < 0 AND sa.created_at > $1::timestamptz AND (sa.is_write_off = FALSE OR sa.is_write_off IS NULL)
       ORDER BY sa.created_at DESC
     `;
 
     const adjustments = await query<{ product_name: string; difference: number; price_cents: number; created_at: Date }>(
       adjustmentsQuery,
-      [cutoffDate]
+      [cutoffDate.toISOString()]
     );
 
     res.json({
