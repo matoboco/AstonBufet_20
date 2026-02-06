@@ -17,6 +17,9 @@ COPY scripts ./scripts
 # Build TypeScript and copy migrations to dist
 RUN npm run build
 
+# Save build time to file
+RUN date -u +%Y-%m-%dT%H:%M:%SZ > /app/dist/build-time.txt
+
 # Expose port
 EXPOSE 3001
 

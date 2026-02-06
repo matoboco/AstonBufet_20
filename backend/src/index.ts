@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 
 // Load environment variables
 dotenv.config();
@@ -35,6 +37,23 @@ app.use((req, _res, next) => {
 // Health check
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Version endpoint - returns build info for PWA update detection
+const getBuildTime = (): string => {
+  const buildTimeFile = join(__dirname, 'build-time.txt');
+  if (existsSync(buildTimeFile)) {
+    return readFileSync(buildTimeFile, 'utf-8').trim();
+  }
+  return new Date().toISOString();
+};
+
+const pkg = require('../package.json');
+app.get('/version', (_req, res) => {
+  res.json({
+    version: pkg.version,
+    buildTime: getBuildTime(),
+  });
 });
 
 // API routes

@@ -1,11 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '../utils/api';
-import { AccountEntry } from '../types';
+import { AccountEntry } from '../types'
 import { TransactionList } from '../components/TransactionList';
+
+const checkForUpdates = async (): Promise<{ hasUpdate: boolean; serverVersion?: string }> => {
+  try {
+    const response = await fetch('/api/version');
+    if (response.ok) {
+      const data = await response.json();
+      const serverBuildTime = data.buildTime;
+      if (serverBuildTime && serverBuildTime !== __BUILD_TIME__) {
+        return { hasUpdate: true, serverVersion: data.version };
+      }
+    }
+  } catch {
+    // Ignore errors
+  }
+  return { hasUpdate: false };
+};
 
 export const History = () => {
   const [transactions, setTransactions] = useState<AccountEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasUpdate, setHasUpdate] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -20,6 +38,32 @@ export const History = () => {
     };
 
     fetchHistory();
+  }, []);
+
+  // Check for updates on mount
+  useEffect(() => {
+    checkForUpdates().then(({ hasUpdate }) => setHasUpdate(hasUpdate));
+  }, []);
+
+  const handleUpdate = useCallback(async () => {
+    setUpdating(true);
+    try {
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map(r => r.unregister()));
+      }
+      // Clear caches
+      if ('caches' in window) {
+        const cacheNames = await caches.keys();
+        await Promise.all(cacheNames.map(name => caches.delete(name)));
+      }
+      // Reload page
+      window.location.reload();
+    } catch (error) {
+      console.error('Update failed:', error);
+      setUpdating(false);
+    }
   }, []);
 
   return (
@@ -42,6 +86,30 @@ export const History = () => {
         <p>
           Build: {new Date(__BUILD_TIME__).toLocaleString('sk-SK', { timeZone: 'UTC' })} UTC
         </p>
+        <button
+          onClick={handleUpdate}
+          disabled={updating}
+          className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm ${
+            hasUpdate
+              ? 'bg-primary-500 text-white'
+              : 'bg-gray-200 text-gray-600'
+          }`}
+        >
+          <svg
+            className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          {updating ? 'Aktualizujem...' : hasUpdate ? 'Nová verzia dostupná!' : 'Skontrolovať aktualizácie'}
+        </button>
       </footer>
     </div>
   );
