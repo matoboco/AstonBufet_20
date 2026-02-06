@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { query, queryOne } from '../db';
-import { generateOTP, generateToken } from '../middleware';
+import { generateOTP, generateToken, authenticateToken } from '../middleware';
 import { sendOTPEmail } from '../email';
 import { requestCodeSchema, verifyCodeSchema } from '../validation';
-import { User, LoginCode, JWTPayload } from '../types';
+import { User, LoginCode, JWTPayload, AuthenticatedRequest } from '../types';
 
 const router = Router();
 
@@ -86,6 +86,7 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
     // Normalize email to lowercase
     const email = validation.data.email.trim().toLowerCase();
     const code = validation.data.code;
+    const name = validation.data.name?.trim() || null;
 
     // Find valid code
     const loginCode = await queryOne<LoginCode>(
@@ -109,22 +110,31 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
     if (!user) {
       // Create new user with appropriate role
       const result = await query<User>(
-        'INSERT INTO users (email, role) VALUES ($1, $2) RETURNING *',
-        [email, expectedRole]
+        'INSERT INTO users (email, name, role) VALUES ($1, $2, $3) RETURNING *',
+        [email, name, expectedRole]
       );
       user = result[0];
       console.log(`Created new user: ${email} with role: ${expectedRole}`);
-    } else if (user.role !== expectedRole && expectedRole === 'office_assistant') {
-      // Upgrade existing user to office_assistant if they're in the list
-      await query('UPDATE users SET role = $1 WHERE id = $2', [expectedRole, user.id]);
-      user.role = expectedRole;
-      console.log(`Upgraded user ${email} to role: ${expectedRole}`);
+    } else {
+      // Update existing user
+      if (user.role !== expectedRole && expectedRole === 'office_assistant') {
+        // Upgrade to office_assistant if they're in the list
+        await query('UPDATE users SET role = $1 WHERE id = $2', [expectedRole, user.id]);
+        user.role = expectedRole;
+        console.log(`Upgraded user ${email} to role: ${expectedRole}`);
+      }
+      // Update name if provided
+      if (name && name !== user.name) {
+        await query('UPDATE users SET name = $1 WHERE id = $2', [name, user.id]);
+        user.name = name;
+      }
     }
 
     // Generate JWT
     const payload: JWTPayload = {
       userId: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
       tokenVersion: user.token_version,
     };
@@ -136,12 +146,55 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         role: user.role,
       },
     });
   } catch (error) {
     console.error('Verify code error:', error);
     res.status(500).json({ error: 'Failed to verify code' });
+  }
+});
+
+// PUT /auth/profile - Update user profile (name)
+router.put('/profile', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { name } = req.body;
+    const trimmedName = name?.trim() || null;
+
+    const user = await queryOne<User>(
+      'UPDATE users SET name = $1 WHERE id = $2 RETURNING *',
+      [trimmedName, req.user!.userId]
+    );
+
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+
+    // Generate new JWT with updated name
+    const payload: JWTPayload = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      tokenVersion: user.token_version,
+    };
+
+    const token = generateToken(payload);
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
   }
 });
 

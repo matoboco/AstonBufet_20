@@ -17,6 +17,7 @@ export const OfficeDashboard = () => {
   const [depositModal, setDepositModal] = useState<AccountBalance | null>(null);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositNote, setDepositNote] = useState('');
+  const [depositContribution, setDepositContribution] = useState('');
   const [depositing, setDepositing] = useState(false);
 
   // Add stock modal
@@ -107,18 +108,22 @@ export const OfficeDashboard = () => {
 
     setDepositing(true);
     try {
+      const contributionCents = depositContribution ? Math.round(parseFloat(depositContribution) * 100) : undefined;
       await api('/account/deposit', {
         method: 'POST',
         body: {
           user_id: depositModal.id,
           amount_cents: Math.round(parseFloat(depositAmount) * 100),
           note: depositNote || undefined,
+          contribution_cents: contributionCents,
         },
       });
-      setMessage({ type: 'success', text: `Vklad ${depositAmount} € pre ${depositModal.email} úspešný` });
+      const contributionMsg = contributionCents ? ` (z toho ${depositContribution} € na manko)` : '';
+      setMessage({ type: 'success', text: `Vklad ${depositAmount} € pre ${depositModal.name || depositModal.email} úspešný${contributionMsg}` });
       setDepositModal(null);
       setDepositAmount('');
       setDepositNote('');
+      setDepositContribution('');
       await fetchData(false);
     } catch (error) {
       setMessage({
@@ -332,7 +337,12 @@ export const OfficeDashboard = () => {
                     className="card flex items-center justify-between"
                   >
                     <div>
-                      <p className="font-medium">{debtor.email}</p>
+                      <p className="font-medium">
+                        {debtor.name || debtor.email}
+                      </p>
+                      {debtor.name && (
+                        <p className="text-sm text-gray-500">{debtor.email}</p>
+                      )}
                       <p className="text-xl font-bold text-red-500">
                         {Number(debtor.balance_eur).toFixed(2)} €
                       </p>
@@ -469,66 +479,126 @@ export const OfficeDashboard = () => {
       </main>
 
       {/* Deposit Modal */}
-      {depositModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6">
-            <h2 className="text-xl font-bold mb-4">Vklad</h2>
-            <p className="text-gray-600 mb-4">{depositModal.email}</p>
-            <p className="text-red-500 font-bold mb-4">
-              Aktuálny zostatok: {Number(depositModal.balance_eur).toFixed(2)} €
-            </p>
+      {depositModal && (() => {
+        const debtAmount = Math.abs(Math.min(0, Number(depositModal.balance_eur)));
+        const depositValue = parseFloat(depositAmount) || 0;
+        const excess = Math.max(0, depositValue - debtAmount);
+        const contributionValue = parseFloat(depositContribution) || 0;
+        const maxContribution = excess;
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Suma (€)
-              </label>
-              <input
-                type="number"
-                className="input"
-                placeholder="0.00"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value)}
-                step="0.01"
-                min="0"
-              />
-            </div>
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+              <h2 className="text-xl font-bold mb-4">Vklad</h2>
+              <p className="font-medium">{depositModal.name || depositModal.email}</p>
+              {depositModal.name && (
+                <p className="text-gray-600 text-sm">{depositModal.email}</p>
+              )}
+              <p className="text-red-500 font-bold mb-4">
+                Aktuálny zostatok: {Number(depositModal.balance_eur).toFixed(2)} €
+              </p>
 
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Poznámka (voliteľné)
-              </label>
-              <input
-                type="text"
-                className="input"
-                placeholder="Vyrovnanie dlhu"
-                value={depositNote}
-                onChange={(e) => setDepositNote(e.target.value)}
-              />
-            </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Suma (€)
+                </label>
+                <input
+                  type="number"
+                  className="input"
+                  placeholder="0.00"
+                  value={depositAmount}
+                  onChange={(e) => {
+                    setDepositAmount(e.target.value);
+                    setDepositContribution('');
+                  }}
+                  step="0.01"
+                  min="0"
+                />
+              </div>
 
-            <div className="flex gap-3">
-              <button
-                className="btn btn-secondary flex-1"
-                onClick={() => {
-                  setDepositModal(null);
-                  setDepositAmount('');
-                  setDepositNote('');
-                }}
-                disabled={depositing}
-              >
-                Zrušiť
-              </button>
-              <button
-                className="btn btn-primary flex-1"
-                onClick={handleDeposit}
-                disabled={depositing || !depositAmount}
-              >
-                {depositing ? 'Spracúvam...' : 'Potvrdiť'}
-              </button>
+              {excess > 0 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Príspevok na manko (max {excess.toFixed(2)} €)
+                  </label>
+                  <input
+                    type="number"
+                    className="input"
+                    placeholder="0.00"
+                    value={depositContribution}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      if (val <= maxContribution) {
+                        setDepositContribution(e.target.value);
+                      }
+                    }}
+                    step="0.01"
+                    min="0"
+                    max={maxContribution}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Prebytok {excess.toFixed(2)} € môže ísť na vyrovnanie manka
+                  </p>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Poznámka (voliteľné)
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Vyrovnanie dlhu"
+                  value={depositNote}
+                  onChange={(e) => setDepositNote(e.target.value)}
+                />
+              </div>
+
+              {depositValue > 0 && (
+                <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm">
+                  <div className="flex justify-between">
+                    <span>Na účet:</span>
+                    <span className="font-medium">{(depositValue - contributionValue).toFixed(2)} €</span>
+                  </div>
+                  {contributionValue > 0 && (
+                    <div className="flex justify-between text-primary-600">
+                      <span>Na manko:</span>
+                      <span className="font-medium">{contributionValue.toFixed(2)} €</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold border-t border-gray-200 pt-2 mt-2">
+                    <span>Celkom:</span>
+                    <span>{depositValue.toFixed(2)} €</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  className="btn btn-secondary flex-1"
+                  onClick={() => {
+                    setDepositModal(null);
+                    setDepositAmount('');
+                    setDepositNote('');
+                    setDepositContribution('');
+                  }}
+                  disabled={depositing}
+                >
+                  Zrušiť
+                </button>
+                <button
+                  className="btn btn-primary flex-1"
+                  onClick={handleDeposit}
+                  disabled={depositing || !depositAmount}
+                >
+                  {depositing ? 'Spracúvam...' : 'Potvrdiť'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Add Stock Modal */}
       {showAddStock && (

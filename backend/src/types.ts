@@ -3,6 +3,7 @@ import { Request } from 'express';
 export interface User {
   id: string;
   email: string;
+  name: string | null;
   role: 'user' | 'office_assistant';
   token_version: number;
   created_at: Date;
@@ -43,18 +44,21 @@ export interface LoginCode {
 export interface AccountBalance {
   id: string;
   email: string;
+  name: string | null;
   role: string;
   balance_eur: number;
 }
 
 export interface AccountHistoryEntry extends AccountEntry {
   email: string;
+  name: string | null;
   running_balance_eur: number;
 }
 
 export interface JWTPayload {
   userId: string;
   email: string;
+  name: string | null;
   role: 'user' | 'office_assistant';
   tokenVersion: number;
 }
@@ -98,4 +102,18 @@ export interface UnacknowledgedShortage {
     difference: number;
     created_at: Date;
   }[];
+}
+
+export interface ShortageContribution {
+  id: string;
+  user_id: string;
+  amount_cents: number;
+  description: string | null;
+  recorded_by: string | null;
+  created_at: Date;
+}
+
+export interface ShortageSummary {
+  total_shortage_cents: number;
+  total_contributions_cents: number;
 }

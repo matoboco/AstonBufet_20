@@ -24,11 +24,24 @@ export const useAuth = () => {
     });
   };
 
-  const verifyCode = async (email: string, code: string): Promise<User> => {
+  const verifyCode = async (email: string, code: string, name?: string): Promise<User> => {
     const response = await api<AuthResponse>('/auth/verify-code', {
       method: 'POST',
-      body: { email, code },
+      body: { email, code, name },
       auth: false,
+    });
+
+    setToken(response.token);
+    setUser(response.user);
+    setUserState(response.user);
+
+    return response.user;
+  };
+
+  const updateProfile = async (name: string): Promise<User> => {
+    const response = await api<AuthResponse>('/auth/profile', {
+      method: 'PUT',
+      body: { name },
     });
 
     setToken(response.token);
@@ -53,6 +66,7 @@ export const useAuth = () => {
     isOfficeAssistant,
     requestCode,
     verifyCode,
+    updateProfile,
     logout,
   };
 };

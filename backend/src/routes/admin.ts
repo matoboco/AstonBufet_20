@@ -27,7 +27,7 @@ router.post('/reminder', authenticateToken, requireRole('office_assistant'), asy
 
     for (const debtor of debtors) {
       try {
-        await sendReminderEmail(debtor.email, debtor.balance_eur);
+        await sendReminderEmail(debtor.email, debtor.balance_eur, debtor.name);
         results.push({
           email: debtor.email,
           balance_eur: debtor.balance_eur,

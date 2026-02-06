@@ -66,14 +66,16 @@ export const sendOTPEmail = async (email: string, code: string): Promise<void> =
 
 export const sendReminderEmail = async (
   email: string,
-  balanceEur: number | string
+  balanceEur: number | string,
+  name?: string | null
 ): Promise<void> => {
   const balance = Number(balanceEur);
+  const greeting = name ? `Dobrý deň, ${name}` : 'Dobrý deň';
   const subject = 'Aston Bufet 2.0 - Pripomienka dlhu';
-  const text = `Dobrý deň,\n\nVáš aktuálny zostatok v bufete je: ${balance.toFixed(2)} €\n\nNezabudnite si prosím vyrovnať dlh u office asistentky.\n\nĎakujeme,\nAston Bufet 2.0`;
+  const text = `${greeting},\n\nVáš aktuálny zostatok v bufete je: ${balance.toFixed(2)} €\n\nNezabudnite si prosím vyrovnať dlh u office asistentky.\n\nĎakujeme,\nAston Bufet 2.0`;
   const html = `
     <h2>Aston Bufet 2.0 - Pripomienka</h2>
-    <p>Dobrý deň,</p>
+    <p>${greeting},</p>
     <p>Váš aktuálny zostatok v bufete je:</p>
     <h1 style="font-size: 28px; color: #ef4444;">${balance.toFixed(2)} €</h1>
     <p>Nezabudnite si prosím vyrovnať dlh u office asistentky.</p>

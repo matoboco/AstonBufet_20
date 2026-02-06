@@ -1,6 +1,7 @@
 export interface User {
   id: string;
   email: string;
+  name: string | null;
   role: 'user' | 'office_assistant';
 }
 
@@ -16,6 +17,7 @@ export interface Product {
 export interface AccountBalance {
   id: string;
   email: string;
+  name: string | null;
   role: string;
   balance_eur: number;
 }
@@ -27,6 +29,7 @@ export interface AccountEntry {
   description: string;
   created_at: string;
   email: string;
+  name: string | null;
   running_balance_eur: number;
 }
 
@@ -81,4 +84,9 @@ export interface ShortageWarning {
     value_eur: number;
     created_at: string;
   }[];
+}
+
+export interface ShortageSummary {
+  total_shortage_cents: number;
+  total_contributions_cents: number;
 }
