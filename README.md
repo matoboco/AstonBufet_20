@@ -1,222 +1,86 @@
 # Firemný Bufet
 
-Interná PWA aplikácia pre firemný bufet s nákupom na účet, FIFO skladom, vyúčtovaním a automatickými pripomienkami.
+Webová aplikácia (PWA) pre správu firemného bufetu s automatickým účtovaním nákupov a správou skladu.
 
-## Funkcie
+## Prehľad
 
-- **Nákup tovaru** - výber zo zoznamu alebo skenovanie EAN kódu
-- **FIFO sklad** - automatické odpisovanie zo starších dávok
-- **Účet na dlh** - záporný zostatok = dlh, kladný = kredit
-- **Vyúčtovanie** - office assistant môže evidovať vklady
-- **Pripomienky** - automatické (cron) alebo manuálne emaily dlžníkom
+Aplikácia umožňuje zamestnancom nakupovať z firemného bufetu pomocou mobilného telefónu. Nákupy sa automaticky účtujú na osobný účet zamestnanca, ktorý sa následne vyrovnáva s office assistant.
 
-## Tech Stack
+## Role používateľov
 
-### Frontend
-- React 18 + TypeScript
-- Vite
-- Tailwind CSS
-- vite-plugin-pwa
-- @zxing/library (barcode scanner)
-- react-webcam
+### Zamestnanec (user)
 
-### Backend
-- Node.js 20 + Express
-- PostgreSQL 16
-- JWT autentifikácia (1 rok platnosť)
-- Zod validácia
-- Nodemailer (SMTP/console mode)
-- node-cron
+Bežný zamestnanec môže:
+
+- **Prezerať produkty** - zoznam dostupných produktov v bufete s cenami a stavom skladu
+- **Nakupovať** - výber produktu a potvrdenie nákupu, suma sa odpočíta z osobného účtu
+- **Skenovať čiarové kódy** - rýchly nákup pomocou skenovania EAN kódu produktu
+- **Sledovať zostatok** - aktuálny stav osobného účtu (kladný = kredit, záporný = dlh)
+- **História transakcií** - prehľad všetkých nákupov a vkladov
+- **Upozornenia na manko** - pri zistení manka v sklade je zamestnanec upozornený s pripomienkou na evidovanie nákupov
+
+### Office Assistant (office_assistant)
+
+Správca bufetu má navyše prístup k:
+
+#### Správa dlžníkov
+- Zoznam zamestnancov so záporným zostatkom
+- Príjem hotovosti a evidencia vkladov na účet zamestnanca
+- Odoslanie emailových pripomienok dlžníkom (dlh > 5 EUR)
+
+#### Správa skladu
+- Naskladnenie tovaru - zadanie EAN, názvu, množstva a nákupnej ceny
+- Automatické vytvorenie nového produktu pri prvom naskladnení
+- Prehľad aktuálnych skladových zásob (FIFO)
+
+#### Správa produktov
+- Úprava názvov produktov
+- Inventúra - zadanie skutočného stavu skladu
+- Automatický výpočet a evidencia manka/prebytku
+
+## Hlavné funkcie
+
+### Nákupný proces
+
+1. Zamestnanec otvorí aplikáciu a vyberie produkt (alebo naskenuje čiarový kód)
+2. Zvolí množstvo a potvrdí nákup
+3. Suma sa automaticky odpočíta z jeho účtu
+4. Sklad sa aktualizuje (FIFO metóda)
+
+### Evidencia manka
+
+1. Office assistant vykoná inventúru - zadá skutočný stav skladu
+2. Systém porovná so stavom v databáze a zaznamená rozdiel
+3. Pri zistení manka sú všetci zamestnanci upozornení pri najbližšom otvorení aplikácie
+4. Zamestnanec musí potvrdiť, že berie upozornenie na vedomie
+
+### Pripomienky dlhov
+
+- Automatické emailové pripomienky na 1. deň v mesiaci (pre dlhy > 5 EUR)
+- Manuálne odoslanie pripomienok office assistant kedykoľvek
+
+### PWA funkcie
+
+- Inštalácia na domovskú obrazovku mobilu
+- Offline podpora (cached assets)
+- Detekcia novej verzie s možnosťou aktualizácie
+
+## Prihlásenie
+
+- Prihlásenie pomocou emailu a jednorazového kódu (OTP)
+- Kód sa odošle na zadaný email a je platný 10 minút
+- Nový používateľ sa automaticky vytvorí pri prvom prihlásení
+
+## Požiadavky
+
+- Moderný webový prehliadač s podporou kamery (pre skenovanie)
+- Prístup k internetu
+- Platná emailová adresa
 
 ## Spustenie
 
-### Požiadavky
-- Docker + Docker Compose
-
-### Quick Start
-
 ```bash
-# Klonovanie
-git clone <repo-url>
-cd firemny-bufet
-
-# Spustenie
-docker-compose up --build
+docker compose up --build
 ```
 
-Aplikácia bude dostupná na:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:3001
-- **PostgreSQL**: localhost:5432
-
-### Test účty
-
-- **Office Assistant**: `assistant@company.sk`
-- **Bežný používateľ**: akýkoľvek email (vytvorí sa automaticky)
-
-### Test produkty
-
-| Produkt | EAN | Cena |
-|---------|-----|------|
-| Káva | 1234567890123 | 1.20€ |
-| Sendvič | 9876543210987 | 2.50€ |
-
-## API Endpoints
-
-### Auth
-- `POST /auth/request-code` - Odoslať OTP kód
-- `POST /auth/verify-code` - Overiť kód a získať JWT
-
-### Produkty
-- `GET /products` - Zoznam produktov so stavom skladu
-- `GET /products/by-ean/:ean` - Produkt podľa EAN
-
-### Nákup
-- `POST /purchases` - Nákup s FIFO alokáciou
-
-### Účet
-- `GET /account/balances` - Zostatky (vlastný/všetky)
-- `GET /account/my-balance` - Vlastný zostatok
-- `GET /account/history/:user_id` - História transakcií
-- `GET /account/my-history` - Vlastná história
-- `POST /account/deposit` - Vklad (office_assistant)
-
-### Sklad (office_assistant)
-- `GET /stock` - Zoznam skladových dávok
-- `POST /stock/add-batch` - Pridať novú dávku
-
-### Admin (office_assistant)
-- `POST /admin/reminder` - Odoslať pripomienky dlžníkom
-- `GET /admin/debtors` - Zoznam dlžníkov
-- `GET /admin/users` - Zoznam všetkých používateľov
-
-## Vývoj
-
-### Backend
-```bash
-cd backend
-npm install
-cp .env.example .env
-npm run dev
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Reminder service
-```bash
-cd backend
-npm run reminder -- --once  # Jednorazovo
-npm run reminder           # Cron (1. deň mesiaca 9:00)
-```
-
-## Databáza a Migrácie
-
-Aplikácia používa automatický migračný systém. Pri štarte backendu sa automaticky:
-1. Počká na dostupnosť PostgreSQL
-2. Vytvorí tabuľku `_migrations` pre sledovanie aplikovaných migrácií
-3. Aplikuje všetky pending migrácie v správnom poradí
-
-### Migračné príkazy
-
-```bash
-cd backend
-
-# Zobraziť stav migrácií
-npm run migrate:status
-
-# Spustiť pending migrácie
-npm run migrate
-
-# Rollback poslednej migrácie
-npm run migrate:rollback
-
-# Rollback posledných N migrácií
-npm run migrate:rollback 3
-
-# Vytvoriť novú migráciu
-npm run migrate:create add_categories_table
-```
-
-### Štruktúra migrácií
-
-Migračné súbory sa nachádzajú v `backend/db/migrations/`:
-
-```
-backend/db/migrations/
-├── 001_initial_schema.sql       # Hlavná schéma
-├── 001_initial_schema.down.sql  # Rollback pre schému
-├── 002_seed_data.sql            # Testovacie dáta
-└── ...
-```
-
-### Vytváranie nových migrácií
-
-1. Spustite `npm run migrate:create nazov_migracie`
-2. Upravte vygenerovaný `.sql` súbor
-3. Voliteľne upravte `.down.sql` pre rollback
-4. Migrácia sa aplikuje automaticky pri ďalšom štarte
-
-### Pravidlá pre migrácie
-
-- Migrácie sú nemenné - nikdy neupravujte už aplikovanú migráciu
-- Pre zmeny vytvorte novú migráciu
-- Vždy testujte rollback pred deploymentom
-- Používajte transakcie v rámci migrácie
-
-## Environment Variables
-
-### Backend (.env)
-```
-DATABASE_URL=postgresql://bufet:secret@localhost:5432/bufet
-JWT_SECRET=your-32-character-secret-key-here
-SMTP_MODE=console
-SMTP_HOST=smtp.company.sk
-SMTP_PORT=587
-SMTP_USER=noreply@company.sk
-SMTP_PASS=password
-SMTP_FROM=noreply@company.sk
-PORT=3001
-CORS_ORIGIN=http://localhost:3000
-RUN_MIGRATIONS=true
-OFFICE_ASSISTANT_EMAILS=assistant@company.sk,admin@company.sk
-```
-
-### Office Assistant Role
-
-Rola `office_assistant` sa prideľuje automaticky používateľom, ktorých email je v zozname `OFFICE_ASSISTANT_EMAILS`:
-
-```bash
-# Jeden email
-OFFICE_ASSISTANT_EMAILS=assistant@company.sk
-
-# Viacero emailov (čiarkou oddelené)
-OFFICE_ASSISTANT_EMAILS=assistant@company.sk,admin@company.sk,manager@company.sk
-```
-
-- Pri prvom prihlásení sa používateľ vytvorí s príslušnou rolou
-- Pri ďalších prihláseniach sa rola aktualizuje ak je email pridaný do zoznamu
-- Rola sa **neodoberá** automaticky ak je email odstránený zo zoznamu (bezpečnosť)
-
-### Frontend
-```
-VITE_API_URL=http://localhost:3001
-```
-
-## PWA
-
-Aplikácia je inštalovateľná ako PWA:
-1. Otvorte http://localhost:3000 v Chrome/Safari
-2. Kliknite na "Pridať na plochu" / "Install"
-
-### Offline podpora
-- Produkty sú cachovane pre offline prehliadanie
-- UI funguje offline (nákup vyžaduje pripojenie)
-
-## Licencia
-
-MIT
+Aplikácia bude dostupná na porte 80.
