@@ -25,9 +25,16 @@ export const ShortageWarningModal = ({ warning, onAcknowledge, loading }: Shorta
           <p className="text-center text-red-700">
             Pri poslednej inventúre bolo zistené manko v celkovej výške:
           </p>
-          <p className="text-center text-3xl font-bold text-red-600 my-2">
-            {warning.total_shortage} ks
-          </p>
+          <div className="text-center my-2">
+            <p className="text-3xl font-bold text-red-600">
+              {warning.total_shortage} ks
+            </p>
+            {warning.total_value_eur !== undefined && warning.total_value_eur > 0 && (
+              <p className="text-xl font-semibold text-red-500">
+                ({warning.total_value_eur.toFixed(2)} EUR)
+              </p>
+            )}
+          </div>
           {warning.shortage_since && (
             <p className="text-center text-sm text-red-600">
               od {new Date(warning.shortage_since).toLocaleDateString('sk-SK')}
@@ -42,7 +49,9 @@ export const ShortageWarningModal = ({ warning, onAcknowledge, loading }: Shorta
               {warning.adjustments.map((adj, i) => (
                 <div key={i} className="flex justify-between text-sm">
                   <span className="text-gray-600">{adj.product_name}</span>
-                  <span className="text-red-600 font-medium">{Math.abs(adj.difference)} ks</span>
+                  <span className="text-red-600 font-medium">
+                    {Math.abs(adj.difference)} ks ({adj.value_eur.toFixed(2)} EUR)
+                  </span>
                 </div>
               ))}
             </div>

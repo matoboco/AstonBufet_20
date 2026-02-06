@@ -73,10 +73,12 @@ export interface StockAdjustment {
 export interface ShortageWarning {
   has_warning: boolean;
   total_shortage?: number;
+  total_value_eur?: number;
   shortage_since?: string | null;
   adjustments?: {
     product_name: string;
     difference: number;
+    value_eur: number;
     created_at: string;
   }[];
 }

@@ -146,24 +146,27 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
     // Get total shortage (negative differences) since last acknowledgement
     let shortageQuery = `
       SELECT
-        COALESCE(SUM(ABS(difference)), 0)::integer as total_shortage,
-        MIN(created_at) as first_shortage_at
-      FROM stock_adjustments
-      WHERE difference < 0
+        COALESCE(SUM(ABS(sa.difference)), 0)::integer as total_shortage,
+        COALESCE(SUM(ABS(sa.difference) * p.price_cents), 0)::integer as total_value_cents,
+        MIN(sa.created_at) as first_shortage_at
+      FROM stock_adjustments sa
+      JOIN products p ON sa.product_id = p.id
+      WHERE sa.difference < 0
     `;
     const params: (string | Date)[] = [];
 
     if (lastAck) {
-      shortageQuery += ' AND created_at > $1';
+      shortageQuery += ' AND sa.created_at > $1';
       params.push(lastAck.acknowledged_at);
     }
 
-    const shortageResult = await queryOne<{ total_shortage: number; first_shortage_at: Date | null }>(
+    const shortageResult = await queryOne<{ total_shortage: number; total_value_cents: number; first_shortage_at: Date | null }>(
       shortageQuery,
       params
     );
 
     const totalShortage = Number(shortageResult?.total_shortage) || 0;
+    const totalValueCents = Number(shortageResult?.total_value_cents) || 0;
 
     if (totalShortage === 0) {
       res.json({ has_warning: false });
@@ -172,7 +175,7 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
 
     // Get individual adjustments for display
     let adjustmentsQuery = `
-      SELECT p.name as product_name, sa.difference, sa.created_at
+      SELECT p.name as product_name, sa.difference, p.price_cents, sa.created_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
       WHERE sa.difference < 0
@@ -183,7 +186,7 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
     }
     adjustmentsQuery += ' ORDER BY sa.created_at DESC';
 
-    const adjustments = await query<{ product_name: string; difference: number; created_at: Date }>(
+    const adjustments = await query<{ product_name: string; difference: number; price_cents: number; created_at: Date }>(
       adjustmentsQuery,
       lastAck ? [lastAck.acknowledged_at] : []
     );
@@ -191,10 +194,12 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
     res.json({
       has_warning: true,
       total_shortage: totalShortage,
+      total_value_eur: totalValueCents / 100,
       shortage_since: lastAck?.acknowledged_at || null,
       adjustments: adjustments.map(a => ({
         product_name: a.product_name,
         difference: Number(a.difference),
+        value_eur: (Math.abs(Number(a.difference)) * Number(a.price_cents)) / 100,
         created_at: a.created_at,
       })),
     });
