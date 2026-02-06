@@ -100,7 +100,13 @@ export const Products = () => {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   };
 
+  // Filter products: only show in-stock items, apply search
   const filteredProducts = products.filter((p) => {
+    // Hide sold out products
+    const stockQty = Number(p.stock_quantity) || 0;
+    if (stockQty <= 0) return false;
+
+    // Apply search filter
     const searchNorm = removeDiacritics(search);
     const nameNorm = removeDiacritics(p.name);
     return nameNorm.includes(searchNorm) || p.ean.includes(search);
@@ -195,6 +201,8 @@ export const Products = () => {
           <div className="text-center text-gray-500 py-8">
             {search
               ? 'Žiadne produkty zodpovedajúce vyhľadávaniu'
+              : products.length > 0
+              ? 'Všetky produkty sú vypredané'
               : 'Zatiaľ žiadne produkty'}
           </div>
         ) : (
