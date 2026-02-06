@@ -32,6 +32,7 @@ coverage/
 
 # Docker
 .docker/
+docker-compose.override.yml
 
 # PWA
 dev-dist/
