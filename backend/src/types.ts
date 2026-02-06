@@ -66,3 +66,19 @@ export interface AuthenticatedRequest extends Request {
 export interface ProductWithStock extends Product {
   stock_quantity: number;
 }
+
+export interface StockAdjustment {
+  id: string;
+  product_id: string;
+  expected_quantity: number;
+  actual_quantity: number;
+  difference: number;
+  reason: string | null;
+  created_by: string | null;
+  created_at: Date;
+}
+
+export interface StockAdjustmentWithProduct extends StockAdjustment {
+  product_name: string;
+  product_ean: string;
+}

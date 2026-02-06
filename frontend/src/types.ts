@@ -56,3 +56,16 @@ export interface PurchaseResponse {
   };
   new_balance_eur: number;
 }
+
+export interface StockAdjustment {
+  id: string;
+  product_id: string;
+  expected_quantity: number;
+  actual_quantity: number;
+  difference: number;
+  reason: string | null;
+  created_by: string | null;
+  created_at: string;
+  product_name: string;
+  product_ean: string;
+}

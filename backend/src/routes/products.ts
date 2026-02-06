@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { query, queryOne } from '../db';
-import { ProductWithStock, Product } from '../types';
+import { ProductWithStock, Product, AuthenticatedRequest } from '../types';
+import { authenticateToken, requireRole } from '../middleware';
 
 const router = Router();
 
@@ -75,6 +76,34 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
   } catch (error) {
     console.error('Get product error:', error);
     res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
+// PUT /products/:id - Update product (office_assistant only)
+router.put('/:id', authenticateToken, requireRole('office_assistant'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim().length === 0) {
+      res.status(400).json({ error: 'Názov produktu je povinný' });
+      return;
+    }
+
+    const product = await queryOne<Product>(
+      'UPDATE products SET name = $1 WHERE id = $2 RETURNING *',
+      [name.trim(), id]
+    );
+
+    if (!product) {
+      res.status(404).json({ error: 'Produkt nebol nájdený' });
+      return;
+    }
+
+    res.json(product);
+  } catch (error) {
+    console.error('Update product error:', error);
+    res.status(500).json({ error: 'Nepodarilo sa aktualizovať produkt' });
   }
 });
 

@@ -3,8 +3,12 @@ import { api } from '../utils/api';
 import { AccountBalance, StockBatch, Product } from '../types';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 
+interface ProductWithStock extends Product {
+  stock_quantity: number;
+}
+
 export const OfficeDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'debtors' | 'stock'>('debtors');
+  const [activeTab, setActiveTab] = useState<'debtors' | 'stock' | 'products'>('debtors');
   const [debtors, setDebtors] = useState<AccountBalance[]>([]);
   const [stock, setStock] = useState<StockBatch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,15 +31,31 @@ export const OfficeDashboard = () => {
   });
   const [addingStock, setAddingStock] = useState(false);
 
+  // Products list for inventory
+  const [products, setProducts] = useState<ProductWithStock[]>([]);
+
+  // Edit product modal
+  const [editProduct, setEditProduct] = useState<ProductWithStock | null>(null);
+  const [editName, setEditName] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Inventory modal
+  const [inventoryProduct, setInventoryProduct] = useState<ProductWithStock | null>(null);
+  const [inventoryQuantity, setInventoryQuantity] = useState('');
+  const [inventoryReason, setInventoryReason] = useState('');
+  const [inventorySaving, setInventorySaving] = useState(false);
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [debtorsData, stockData] = await Promise.all([
+      const [debtorsData, stockData, productsData] = await Promise.all([
         api<AccountBalance[]>('/admin/debtors'),
         api<StockBatch[]>('/stock'),
+        api<ProductWithStock[]>('/products'),
       ]);
       setDebtors(debtorsData);
       setStock(stockData);
+      setProducts(productsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -140,6 +160,55 @@ export const OfficeDashboard = () => {
     }
   };
 
+  const handleEditProduct = async () => {
+    if (!editProduct) return;
+    setSaving(true);
+    try {
+      await api(`/products/${editProduct.id}`, {
+        method: 'PUT',
+        body: { name: editName },
+      });
+      setMessage({ type: 'success', text: 'Názov produktu bol aktualizovaný' });
+      setEditProduct(null);
+      setEditName('');
+      await fetchData();
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Nepodarilo sa uložiť',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInventory = async () => {
+    if (!inventoryProduct) return;
+    setInventorySaving(true);
+    try {
+      const result = await api<{ message: string }>('/stock/adjustment', {
+        method: 'POST',
+        body: {
+          product_id: inventoryProduct.id,
+          actual_quantity: parseInt(inventoryQuantity),
+          reason: inventoryReason || undefined,
+        },
+      });
+      setMessage({ type: 'success', text: result.message });
+      setInventoryProduct(null);
+      setInventoryQuantity('');
+      setInventoryReason('');
+      await fetchData();
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Nepodarilo sa uložiť inventúru',
+      });
+    } finally {
+      setInventorySaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
@@ -187,7 +256,17 @@ export const OfficeDashboard = () => {
             }`}
             onClick={() => setActiveTab('stock')}
           >
-            Sklad
+            Naskladniť
+          </button>
+          <button
+            className={`py-3 px-4 font-medium border-b-2 ${
+              activeTab === 'products'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500'
+            }`}
+            onClick={() => setActiveTab('products')}
+          >
+            Produkty
           </button>
         </div>
       </div>
@@ -288,6 +367,66 @@ export const OfficeDashboard = () => {
                       Pridané:{' '}
                       {new Date(batch.created_at).toLocaleDateString('sk-SK')}
                     </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'products' && (
+          <div className="space-y-4">
+            {loading ? (
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="card animate-pulse">
+                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                Žiadne produkty
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {products.map((product) => (
+                  <div key={product.id} className="card">
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <p className="font-semibold">{product.name}</p>
+                        <p className="text-sm text-gray-500">{product.ean}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-bold ${Number(product.stock_quantity) > 0 ? 'text-primary-600' : 'text-red-500'}`}>
+                          {product.stock_quantity} ks
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {(Number(product.price_cents) / 100).toFixed(2)} €
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        className="btn btn-secondary flex-1 text-sm py-2"
+                        onClick={() => {
+                          setEditProduct(product);
+                          setEditName(product.name);
+                        }}
+                      >
+                        Upraviť názov
+                      </button>
+                      <button
+                        className="btn btn-primary flex-1 text-sm py-2"
+                        onClick={() => {
+                          setInventoryProduct(product);
+                          setInventoryQuantity(String(product.stock_quantity));
+                        }}
+                      >
+                        Inventúra
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -395,7 +534,7 @@ export const OfficeDashboard = () => {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                      d="M4 6h2v12H4zM8 6h1v12H8zM11 6h2v12h-2zM15 6h1v12h-1zM18 6h2v12h-2z"
                     />
                   </svg>
                 </button>
@@ -473,6 +612,122 @@ export const OfficeDashboard = () => {
                 }
               >
                 {addingStock ? 'Pridávam...' : 'Pridať'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {editProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+            <h2 className="text-xl font-bold mb-4">Upraviť produkt</h2>
+            <p className="text-sm text-gray-500 mb-4">{editProduct.ean}</p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Názov produktu
+              </label>
+              <input
+                type="text"
+                className="input"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="btn btn-secondary flex-1"
+                onClick={() => {
+                  setEditProduct(null);
+                  setEditName('');
+                }}
+                disabled={saving}
+              >
+                Zrušiť
+              </button>
+              <button
+                className="btn btn-primary flex-1"
+                onClick={handleEditProduct}
+                disabled={saving || !editName.trim()}
+              >
+                {saving ? 'Ukladám...' : 'Uložiť'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Inventory Modal */}
+      {inventoryProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+            <h2 className="text-xl font-bold mb-2">Inventúra</h2>
+            <p className="font-semibold">{inventoryProduct.name}</p>
+            <p className="text-sm text-gray-500 mb-4">{inventoryProduct.ean}</p>
+
+            <div className="bg-gray-50 rounded-lg p-3 mb-4">
+              <p className="text-sm text-gray-600">Očakávaný stav:</p>
+              <p className="text-xl font-bold">{inventoryProduct.stock_quantity} ks</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Skutočný stav (ks)
+              </label>
+              <input
+                type="number"
+                className="input text-xl font-bold"
+                value={inventoryQuantity}
+                onChange={(e) => setInventoryQuantity(e.target.value)}
+                min="0"
+              />
+              {inventoryQuantity && parseInt(inventoryQuantity) !== inventoryProduct.stock_quantity && (
+                <p className={`text-sm mt-1 font-medium ${
+                  parseInt(inventoryQuantity) < inventoryProduct.stock_quantity
+                    ? 'text-red-500'
+                    : 'text-green-500'
+                }`}>
+                  {parseInt(inventoryQuantity) < inventoryProduct.stock_quantity
+                    ? `Manko: ${inventoryProduct.stock_quantity - parseInt(inventoryQuantity)} ks`
+                    : `Prebytok: ${parseInt(inventoryQuantity) - inventoryProduct.stock_quantity} ks`}
+                </p>
+              )}
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Dôvod (voliteľné)
+              </label>
+              <input
+                type="text"
+                className="input"
+                placeholder="Napr. mesačná inventúra"
+                value={inventoryReason}
+                onChange={(e) => setInventoryReason(e.target.value)}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                className="btn btn-secondary flex-1"
+                onClick={() => {
+                  setInventoryProduct(null);
+                  setInventoryQuantity('');
+                  setInventoryReason('');
+                }}
+                disabled={inventorySaving}
+              >
+                Zrušiť
+              </button>
+              <button
+                className="btn btn-primary flex-1"
+                onClick={handleInventory}
+                disabled={inventorySaving || inventoryQuantity === ''}
+              >
+                {inventorySaving ? 'Ukladám...' : 'Potvrdiť'}
               </button>
             </div>
           </div>
