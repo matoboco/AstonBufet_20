@@ -1,5 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Product } from '../types';
+import { api } from '../utils/api';
+
+interface PricePreview {
+  quantity: number;
+  total_cents: number;
+  total_eur: number;
+  unit_price_cents: number;
+  unit_price_eur: number;
+  available_stock: number;
+  breakdown: { quantity: number; price_cents: number }[];
+}
 
 interface PurchaseModalProps {
   product: Product;
@@ -15,12 +26,35 @@ export const PurchaseModal = ({
   loading,
 }: PurchaseModalProps) => {
   const [quantity, setQuantity] = useState(1);
-  const priceCents = Number(product.price_cents) || 0;
+  const [pricePreview, setPricePreview] = useState<PricePreview | null>(null);
+  const [loadingPrice, setLoadingPrice] = useState(false);
   const stockQty = Number(product.stock_quantity) || 0;
-  const priceEur = priceCents / 100;
-  const total = priceEur * quantity;
-
   const maxQuantity = Math.min(stockQty, 10);
+
+  // Fetch FIFO price when quantity changes
+  useEffect(() => {
+    const fetchPrice = async () => {
+      setLoadingPrice(true);
+      try {
+        const preview = await api<PricePreview>(
+          `/products/${product.id}/price-preview?quantity=${quantity}`,
+          { auth: false }
+        );
+        setPricePreview(preview);
+      } catch (error) {
+        console.error('Failed to fetch price preview:', error);
+        setPricePreview(null);
+      } finally {
+        setLoadingPrice(false);
+      }
+    };
+
+    fetchPrice();
+  }, [product.id, quantity]);
+
+  const unitPriceEur = pricePreview?.unit_price_eur || Number(product.price_cents) / 100;
+  const totalEur = pricePreview?.total_eur || unitPriceEur * quantity;
+  const hasMixedPrices = pricePreview?.breakdown && pricePreview.breakdown.length > 1;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -32,8 +66,15 @@ export const PurchaseModal = ({
             <p className="font-semibold text-lg">{product.name}</p>
             <p className="text-sm text-gray-500">{product.ean}</p>
             <p className="text-primary-600 font-bold mt-1">
-              {priceEur.toFixed(2)} € / ks
+              {loadingPrice ? '...' : `${unitPriceEur.toFixed(2)} € / ks`}
             </p>
+            {hasMixedPrices && pricePreview && (
+              <p className="text-xs text-gray-500 mt-1">
+                (mix cien: {pricePreview.breakdown.map(b =>
+                  `${b.quantity}ks × ${(b.price_cents / 100).toFixed(2)}€`
+                ).join(' + ')})
+              </p>
+            )}
           </div>
 
           <div className="mb-6">
@@ -68,7 +109,7 @@ export const PurchaseModal = ({
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Celkom:</span>
               <span className="text-2xl font-bold text-primary-600">
-                {total.toFixed(2)} €
+                {loadingPrice ? '...' : `${totalEur.toFixed(2)} €`}
               </span>
             </div>
           </div>

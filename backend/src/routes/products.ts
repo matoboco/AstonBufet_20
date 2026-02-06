@@ -107,4 +107,58 @@ router.put('/:id', authenticateToken, requireRole('office_assistant'), async (re
   }
 });
 
+// GET /products/:id/price-preview - Calculate FIFO price for quantity
+router.get('/:id/price-preview', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const quantity = parseInt(req.query.quantity as string) || 1;
+
+    // Get available batches (FIFO - oldest first)
+    const batches = await query<{ quantity: number; price_cents: number }>(
+      `SELECT quantity, price_cents FROM stock_batches
+       WHERE product_id = $1 AND quantity > 0
+       ORDER BY created_at ASC`,
+      [id]
+    );
+
+    if (batches.length === 0) {
+      res.status(404).json({ error: 'Produkt nie je na sklade' });
+      return;
+    }
+
+    // Calculate FIFO price
+    let remainingQty = quantity;
+    let totalCost = 0;
+    const breakdown: { quantity: number; price_cents: number }[] = [];
+
+    for (const batch of batches) {
+      if (remainingQty === 0) break;
+
+      const allocQty = Math.min(remainingQty, batch.quantity);
+      totalCost += allocQty * batch.price_cents;
+      breakdown.push({
+        quantity: allocQty,
+        price_cents: batch.price_cents,
+      });
+
+      remainingQty -= allocQty;
+    }
+
+    const totalStock = batches.reduce((sum, b) => sum + b.quantity, 0);
+
+    res.json({
+      quantity,
+      total_cents: totalCost,
+      total_eur: totalCost / 100,
+      unit_price_cents: Math.round(totalCost / quantity),
+      unit_price_eur: totalCost / quantity / 100,
+      available_stock: totalStock,
+      breakdown,
+    });
+  } catch (error) {
+    console.error('Price preview error:', error);
+    res.status(500).json({ error: 'Nepodarilo sa vypočítať cenu' });
+  }
+});
+
 export default router;
