@@ -46,7 +46,7 @@ router.post('/request-code', async (req: Request, res: Response): Promise<void> 
       const localPart = email.split('@')[0];
       if (localPart.includes('.')) {
         res.status(400).json({
-          error: 'Prosím, použite krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)'
+          error: 'Prosím, použi krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)'
         });
         return;
       }

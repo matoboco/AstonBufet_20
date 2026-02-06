@@ -860,7 +860,7 @@ export const OfficeDashboard = () => {
                   </span>
                 </label>
                 <p className="text-xs text-gray-500 mt-1 ml-8">
-                  Použite pre expirovaný alebo poškodený tovar
+                  Použi pre expirovaný alebo poškodený tovar
                 </p>
               </div>
             )}

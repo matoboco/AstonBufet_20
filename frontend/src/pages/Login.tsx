@@ -26,7 +26,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
     if (normalizedEmail.endsWith('@aston.sk')) {
       const localPart = normalizedEmail.split('@')[0];
       if (localPart.includes('.')) {
-        setError('Prosím, použite krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)');
+        setError('Prosím, použi krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)');
         return;
       }
     }
@@ -66,8 +66,8 @@ export const Login = ({ onSuccess }: LoginProps) => {
             <h1 className="text-3xl font-bold text-gray-900">Aston Bufet 2.0</h1>
             <p className="text-gray-500 mt-2">
               {step === 'email'
-                ? 'Prihláste sa pomocou firemného emailu'
-                : 'Zadajte kód z emailu'}
+                ? 'Prihlás sa pomocou firemného emailu'
+                : 'Zadaj kód z emailu'}
             </p>
           </div>
 
