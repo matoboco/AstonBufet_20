@@ -137,32 +137,35 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
 // GET /account/shortage-warning - Get unacknowledged shortage for current user
 router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    // Get user's last acknowledgement
+    // Get user's creation date and last acknowledgement
+    const user = await queryOne<{ created_at: Date }>(
+      'SELECT created_at FROM users WHERE id = $1',
+      [req.user!.userId]
+    );
+
     const lastAck = await queryOne<ShortageAcknowledgement>(
       'SELECT * FROM shortage_acknowledgements WHERE user_id = $1',
       [req.user!.userId]
     );
 
-    // Get total shortage (negative differences) since last acknowledgement
-    let shortageQuery = `
+    // Use the later of: user creation date or last acknowledgement
+    // This ensures new users don't see historical shortages from before they joined
+    const cutoffDate = lastAck?.acknowledged_at || user?.created_at || new Date();
+
+    // Get total shortage (negative differences) since cutoff date
+    const shortageQuery = `
       SELECT
         COALESCE(SUM(ABS(sa.difference)), 0)::integer as total_shortage,
         COALESCE(SUM(ABS(sa.difference) * p.price_cents), 0)::integer as total_value_cents,
         MIN(sa.created_at) as first_shortage_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
-      WHERE sa.difference < 0
+      WHERE sa.difference < 0 AND sa.created_at > $1
     `;
-    const params: (string | Date)[] = [];
-
-    if (lastAck) {
-      shortageQuery += ' AND sa.created_at > $1';
-      params.push(lastAck.acknowledged_at);
-    }
 
     const shortageResult = await queryOne<{ total_shortage: number; total_value_cents: number; first_shortage_at: Date | null }>(
       shortageQuery,
-      params
+      [cutoffDate]
     );
 
     const totalShortage = Number(shortageResult?.total_shortage) || 0;
@@ -174,21 +177,17 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
     }
 
     // Get individual adjustments for display
-    let adjustmentsQuery = `
+    const adjustmentsQuery = `
       SELECT p.name as product_name, sa.difference, p.price_cents, sa.created_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
-      WHERE sa.difference < 0
+      WHERE sa.difference < 0 AND sa.created_at > $1
+      ORDER BY sa.created_at DESC
     `;
-
-    if (lastAck) {
-      adjustmentsQuery += ' AND sa.created_at > $1';
-    }
-    adjustmentsQuery += ' ORDER BY sa.created_at DESC';
 
     const adjustments = await query<{ product_name: string; difference: number; price_cents: number; created_at: Date }>(
       adjustmentsQuery,
-      lastAck ? [lastAck.acknowledged_at] : []
+      [cutoffDate]
     );
 
     res.json({
