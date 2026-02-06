@@ -5,7 +5,8 @@ import { TransactionList } from '../components/TransactionList';
 
 const checkForUpdates = async (): Promise<{ hasUpdate: boolean; serverVersion?: string }> => {
   try {
-    const response = await fetch('/api/version');
+    // Add cache-busting query param to bypass service worker cache
+    const response = await fetch(`/version.json?t=${Date.now()}`);
     if (response.ok) {
       const data = await response.json();
       const serverBuildTime = data.buildTime;

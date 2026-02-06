@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 
 // Get version info at build time
 const getVersionInfo = () => {
@@ -23,9 +23,26 @@ const getVersionInfo = () => {
 
 const versionInfo = getVersionInfo();
 
+// Plugin to write version.json to dist folder after build
+const versionPlugin = () => ({
+  name: 'version-plugin',
+  closeBundle() {
+    const distDir = 'dist';
+    if (!existsSync(distDir)) {
+      mkdirSync(distDir, { recursive: true });
+    }
+    writeFileSync(
+      `${distDir}/version.json`,
+      JSON.stringify(versionInfo, null, 2)
+    );
+    console.log('Generated version.json:', versionInfo);
+  },
+});
+
 export default defineConfig({
   plugins: [
     react(),
+    versionPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
@@ -60,6 +77,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Don't cache version.json - needed for update detection
+        globIgnores: ['**/version.json'],
         runtimeCaching: [
           {
             urlPattern: /^https?:\/\/.*\/products$/,
