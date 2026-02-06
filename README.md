@@ -21,22 +21,19 @@ Bežný zamestnanec môže:
 
 ### Office Assistant (office_assistant)
 
-Správca bufetu má navyše prístup k:
+Správca bufetu má prístup k dashboardu s dvoma kartami:
 
-#### Správa dlžníkov
+#### Karta Sklad (hlavná)
+- **Vyhľadávanie produktov** - textové vyhľadávanie alebo skenovanie EAN
+- **Naskladnenie tovaru** - zadanie EAN, názvu, množstva a nákupnej ceny
+- **Inventúra** - zadanie skutočného stavu skladu s automatickým výpočtom manka/prebytku
+- **Odpis tovaru** - možnosť odpísať tovar (expirovaný, poškodený) bez evidencie ako manko
+- **Úprava názvov produktov**
+
+#### Karta Dlžníci
 - Zoznam zamestnancov so záporným zostatkom
 - Príjem hotovosti a evidencia vkladov na účet zamestnanca
 - Odoslanie emailových pripomienok dlžníkom (dlh > 5 EUR)
-
-#### Správa skladu
-- Naskladnenie tovaru - zadanie EAN, názvu, množstva a nákupnej ceny
-- Automatické vytvorenie nového produktu pri prvom naskladnení
-- Prehľad aktuálnych skladových zásob (FIFO)
-
-#### Správa produktov
-- Úprava názvov produktov
-- Inventúra - zadanie skutočného stavu skladu
-- Automatický výpočet a evidencia manka/prebytku
 
 ## Hlavné funkcie
 
@@ -44,8 +41,9 @@ Správca bufetu má navyše prístup k:
 
 1. Zamestnanec otvorí aplikáciu a vyberie produkt (alebo naskenuje čiarový kód)
 2. Zvolí množstvo a potvrdí nákup
-3. Suma sa automaticky odpočíta z jeho účtu
-4. Sklad sa aktualizuje (FIFO metóda)
+3. Zobrazí sa skutočná cena podľa FIFO (ak sú rôzne nákupné ceny, zobrazí sa mix)
+4. Suma sa automaticky odpočíta z jeho účtu
+5. Sklad sa aktualizuje (FIFO metóda)
 
 ### Evidencia manka
 
@@ -53,6 +51,7 @@ Správca bufetu má navyše prístup k:
 2. Systém porovná so stavom v databáze a zaznamená rozdiel
 3. Pri zistení manka sú všetci zamestnanci upozornení pri najbližšom otvorení aplikácie
 4. Zamestnanec musí potvrdiť, že berie upozornenie na vedomie
+5. Odpisy (expirovaný/poškodený tovar) sa nezapočítavajú do upozornení
 
 ### Pripomienky dlhov
 
@@ -70,6 +69,7 @@ Správca bufetu má navyše prístup k:
 - Prihlásenie pomocou emailu a jednorazového kódu (OTP)
 - Kód sa odošle na zadaný email a je platný 10 minút
 - Nový používateľ sa automaticky vytvorí pri prvom prihlásení
+- Pre @aston.sk adresy sa používa krátky tvar bez bodky (mpriezvisko@aston.sk)
 
 ## Požiadavky
 
