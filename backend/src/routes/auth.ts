@@ -9,8 +9,9 @@ const router = Router();
 
 /**
  * Check if email should have office_assistant role based on OFFICE_ASSISTANT_EMAILS env variable
+ * Supports suffix matching: if "assistant@aston.sk" is defined, then "mbocko+assistant@aston.sk" also matches
  */
-const getOfficeAssistantEmails = (): string[] => {
+const getOfficeAssistantSuffixes = (): string[] => {
   const emailsEnv = process.env.OFFICE_ASSISTANT_EMAILS || '';
   return emailsEnv
     .split(',')
@@ -19,8 +20,9 @@ const getOfficeAssistantEmails = (): string[] => {
 };
 
 const isOfficeAssistantEmail = (email: string): boolean => {
-  const officeEmails = getOfficeAssistantEmails();
-  return officeEmails.includes(email.toLowerCase());
+  const suffixes = getOfficeAssistantSuffixes();
+  const normalizedEmail = email.toLowerCase();
+  return suffixes.some((suffix) => normalizedEmail.endsWith(suffix));
 };
 
 const determineUserRole = (email: string): 'user' | 'office_assistant' => {
