@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -28,9 +29,22 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Request logging
+// Request logging with user email
 app.use((req, _res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.path}`);
+  let userEmail = '-';
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.substring(7);
+      const decoded = jwt.decode(token) as { email?: string } | null;
+      if (decoded?.email) {
+        userEmail = decoded.email;
+      }
+    } catch {
+      // Ignore decode errors
+    }
+  }
+  console.log(`${new Date().toISOString()} ${req.method} ${req.path} [${userEmail}]`);
   next();
 });
 

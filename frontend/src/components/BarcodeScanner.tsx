@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 
 interface BarcodeScannerProps {
@@ -8,12 +8,30 @@ interface BarcodeScannerProps {
 
 export const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
   const [error, setError] = useState<string | null>(null);
-  const [scanning, setScanning] = useState(true);
   const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const hasScannedRef = useRef(false);
+
+  // Stabilize onScan callback
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
+
+  const handleScanResult = useCallback((code: string) => {
+    if (hasScannedRef.current) return;
+    hasScannedRef.current = true;
+
+    // Stop scanning immediately
+    codeReaderRef.current?.reset();
+
+    // Call onScan after a small delay to ensure cleanup
+    setTimeout(() => {
+      onScanRef.current(code);
+    }, 50);
+  }, []);
 
   useEffect(() => {
     const codeReader = new BrowserMultiFormatReader();
     codeReaderRef.current = codeReader;
+    hasScannedRef.current = false;
 
     const startScanning = async () => {
       try {
@@ -36,9 +54,8 @@ export const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
           deviceId,
           'barcode-video',
           (result, err) => {
-            if (result) {
-              setScanning(false);
-              onScan(result.getText());
+            if (result && !hasScannedRef.current) {
+              handleScanResult(result.getText());
             }
             if (err && !(err instanceof NotFoundException)) {
               console.error('Scan error:', err);
@@ -51,14 +68,12 @@ export const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
       }
     };
 
-    if (scanning) {
-      startScanning();
-    }
+    startScanning();
 
     return () => {
       codeReader.reset();
     };
-  }, [onScan, scanning]);
+  }, [handleScanResult]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
