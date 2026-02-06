@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../utils/api';
-import { AccountBalance, StockBatch, Product } from '../types';
+import { AccountBalance, Product } from '../types';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 
 interface ProductWithStock extends Product {
@@ -8,9 +8,8 @@ interface ProductWithStock extends Product {
 }
 
 export const OfficeDashboard = () => {
-  const [activeTab, setActiveTab] = useState<'debtors' | 'stock' | 'products'>('debtors');
+  const [activeTab, setActiveTab] = useState<'debtors' | 'sklad'>('sklad');
   const [debtors, setDebtors] = useState<AccountBalance[]>([]);
-  const [stock, setStock] = useState<StockBatch[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -33,6 +32,8 @@ export const OfficeDashboard = () => {
 
   // Products list for inventory
   const [products, setProducts] = useState<ProductWithStock[]>([]);
+  const [productSearch, setProductSearch] = useState('');
+  const [showProductScanner, setShowProductScanner] = useState(false);
 
   // Edit product modal
   const [editProduct, setEditProduct] = useState<ProductWithStock | null>(null);
@@ -48,13 +49,11 @@ export const OfficeDashboard = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [debtorsData, stockData, productsData] = await Promise.all([
+      const [debtorsData, productsData] = await Promise.all([
         api<AccountBalance[]>('/admin/debtors'),
-        api<StockBatch[]>('/stock'),
         api<ProductWithStock[]>('/products'),
       ]);
       setDebtors(debtorsData);
-      setStock(stockData);
       setProducts(productsData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -220,6 +219,24 @@ export const OfficeDashboard = () => {
     }
   };
 
+  const handleProductScan = (ean: string) => {
+    setShowProductScanner(false);
+    setProductSearch(ean);
+  };
+
+  // Remove diacritics for search
+  const removeDiacritics = (str: string): string => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  };
+
+  // Filter products by search
+  const filteredProducts = products.filter((p) => {
+    if (!productSearch) return true;
+    const searchNorm = removeDiacritics(productSearch);
+    const nameNorm = removeDiacritics(p.name);
+    return nameNorm.includes(searchNorm) || p.ean.includes(productSearch);
+  });
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
@@ -251,6 +268,16 @@ export const OfficeDashboard = () => {
         <div className="flex">
           <button
             className={`py-3 px-4 font-medium border-b-2 ${
+              activeTab === 'sklad'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500'
+            }`}
+            onClick={() => setActiveTab('sklad')}
+          >
+            Sklad
+          </button>
+          <button
+            className={`py-3 px-4 font-medium border-b-2 ${
               activeTab === 'debtors'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-gray-500'
@@ -258,26 +285,6 @@ export const OfficeDashboard = () => {
             onClick={() => setActiveTab('debtors')}
           >
             Dlžníci
-          </button>
-          <button
-            className={`py-3 px-4 font-medium border-b-2 ${
-              activeTab === 'stock'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500'
-            }`}
-            onClick={() => setActiveTab('stock')}
-          >
-            Naskladniť
-          </button>
-          <button
-            className={`py-3 px-4 font-medium border-b-2 ${
-              activeTab === 'products'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500'
-            }`}
-            onClick={() => setActiveTab('products')}
-          >
-            Produkty
           </button>
         </div>
       </div>
@@ -332,8 +339,56 @@ export const OfficeDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'stock' && (
+        {activeTab === 'sklad' && (
           <div className="space-y-4">
+            {/* Search and scan */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  className="input pl-10"
+                  placeholder="Hľadať produkt..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                />
+                <svg
+                  className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <button
+                className="btn btn-primary p-3"
+                onClick={() => {
+                  setMessage(null);
+                  setShowProductScanner(true);
+                }}
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Add stock button */}
             <button
               className="btn btn-primary w-full"
               onClick={() => setShowAddStock(true)}
@@ -341,6 +396,7 @@ export const OfficeDashboard = () => {
               Pridať na sklad
             </button>
 
+            {/* Products list */}
             {loading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
@@ -350,59 +406,13 @@ export const OfficeDashboard = () => {
                   </div>
                 ))}
               </div>
-            ) : stock.length === 0 ? (
+            ) : filteredProducts.length === 0 ? (
               <div className="text-center text-gray-500 py-8">
-                Sklad je prázdny
+                {productSearch ? 'Žiadne produkty zodpovedajúce vyhľadávaniu' : 'Žiadne produkty'}
               </div>
             ) : (
               <div className="space-y-2">
-                {stock.map((batch) => (
-                  <div key={batch.id} className="card">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-semibold">{batch.product_name}</p>
-                        <p className="text-sm text-gray-500">
-                          {batch.product_ean}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary-600">
-                          {batch.quantity} ks
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {(Number(batch.price_cents) / 100).toFixed(2)} €/ks
-                        </p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">
-                      Pridané:{' '}
-                      {new Date(batch.created_at).toLocaleDateString('sk-SK')}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'products' && (
-          <div className="space-y-4">
-            {loading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="card animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                ))}
-              </div>
-            ) : products.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                Žiadne produkty
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <div key={product.id} className="card">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
@@ -745,9 +755,14 @@ export const OfficeDashboard = () => {
         </div>
       )}
 
-      {/* Barcode Scanner */}
+      {/* Barcode Scanner for Add Stock */}
       {showScanner && (
         <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />
+      )}
+
+      {/* Barcode Scanner for Product Search */}
+      {showProductScanner && (
+        <BarcodeScanner onScan={handleProductScan} onClose={() => setShowProductScanner(false)} />
       )}
     </div>
   );
