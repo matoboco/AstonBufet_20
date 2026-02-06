@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { query, queryOne } from '../db';
 import { authenticateToken, requireRole, requireSelfOrRole } from '../middleware';
 import { depositSchema } from '../validation';
-import { AuthenticatedRequest, AccountBalance, AccountHistoryEntry } from '../types';
+import { AuthenticatedRequest, AccountBalance, AccountHistoryEntry, ShortageAcknowledgement } from '../types';
 
 const router = Router();
 
@@ -131,6 +131,101 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
   } catch (error) {
     console.error('Deposit error:', error);
     res.status(500).json({ error: 'Failed to process deposit' });
+  }
+});
+
+// GET /account/shortage-warning - Get unacknowledged shortage for current user
+router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    // Get user's last acknowledgement
+    const lastAck = await queryOne<ShortageAcknowledgement>(
+      'SELECT * FROM shortage_acknowledgements WHERE user_id = $1',
+      [req.user!.userId]
+    );
+
+    // Get total shortage (negative differences) since last acknowledgement
+    let shortageQuery = `
+      SELECT
+        COALESCE(SUM(ABS(difference)), 0)::integer as total_shortage,
+        MIN(created_at) as first_shortage_at
+      FROM stock_adjustments
+      WHERE difference < 0
+    `;
+    const params: (string | Date)[] = [];
+
+    if (lastAck) {
+      shortageQuery += ' AND created_at > $1';
+      params.push(lastAck.acknowledged_at);
+    }
+
+    const shortageResult = await queryOne<{ total_shortage: number; first_shortage_at: Date | null }>(
+      shortageQuery,
+      params
+    );
+
+    const totalShortage = Number(shortageResult?.total_shortage) || 0;
+
+    if (totalShortage === 0) {
+      res.json({ has_warning: false });
+      return;
+    }
+
+    // Get individual adjustments for display
+    let adjustmentsQuery = `
+      SELECT p.name as product_name, sa.difference, sa.created_at
+      FROM stock_adjustments sa
+      JOIN products p ON sa.product_id = p.id
+      WHERE sa.difference < 0
+    `;
+
+    if (lastAck) {
+      adjustmentsQuery += ' AND sa.created_at > $1';
+    }
+    adjustmentsQuery += ' ORDER BY sa.created_at DESC';
+
+    const adjustments = await query<{ product_name: string; difference: number; created_at: Date }>(
+      adjustmentsQuery,
+      lastAck ? [lastAck.acknowledged_at] : []
+    );
+
+    res.json({
+      has_warning: true,
+      total_shortage: totalShortage,
+      shortage_since: lastAck?.acknowledged_at || null,
+      adjustments: adjustments.map(a => ({
+        product_name: a.product_name,
+        difference: Number(a.difference),
+        created_at: a.created_at,
+      })),
+    });
+  } catch (error) {
+    console.error('Get shortage warning error:', error);
+    res.status(500).json({ error: 'Failed to fetch shortage warning' });
+  }
+});
+
+// POST /account/acknowledge-shortage - Mark shortage warning as seen
+router.post('/acknowledge-shortage', authenticateToken, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    // Get current total shortage
+    const shortageResult = await queryOne<{ total: number }>(
+      'SELECT COALESCE(SUM(ABS(difference)), 0)::integer as total FROM stock_adjustments WHERE difference < 0'
+    );
+    const currentTotal = Number(shortageResult?.total) || 0;
+
+    // Upsert acknowledgement
+    await query(
+      `INSERT INTO shortage_acknowledgements (user_id, acknowledged_at, shortage_total)
+       VALUES ($1, NOW(), $2)
+       ON CONFLICT (user_id)
+       DO UPDATE SET acknowledged_at = NOW(), shortage_total = $2`,
+      [req.user!.userId, currentTotal]
+    );
+
+    res.json({ success: true, acknowledged_at: new Date().toISOString() });
+  } catch (error) {
+    console.error('Acknowledge shortage error:', error);
+    res.status(500).json({ error: 'Failed to acknowledge shortage' });
   }
 });
 

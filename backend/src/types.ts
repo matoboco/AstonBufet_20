@@ -82,3 +82,20 @@ export interface StockAdjustmentWithProduct extends StockAdjustment {
   product_name: string;
   product_ean: string;
 }
+
+export interface ShortageAcknowledgement {
+  id: string;
+  user_id: string;
+  acknowledged_at: Date;
+  shortage_total: number;
+}
+
+export interface UnacknowledgedShortage {
+  total_shortage: number;
+  shortage_since: Date | null;
+  adjustments: {
+    product_name: string;
+    difference: number;
+    created_at: Date;
+  }[];
+}

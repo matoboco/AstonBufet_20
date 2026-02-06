@@ -1,14 +1,41 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { Navigation } from './components/Navigation';
+import { ShortageWarningModal } from './components/ShortageWarningModal';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Products } from './pages/Products';
 import { History } from './pages/History';
 import { OfficeDashboard } from './pages/OfficeDashboard';
+import { api } from './utils/api';
+import { ShortageWarning } from './types';
 
 function App() {
   const { loading, isAuthenticated, isOfficeAssistant, logout } = useAuth();
+  const [shortageWarning, setShortageWarning] = useState<ShortageWarning | null>(null);
+  const [acknowledging, setAcknowledging] = useState(false);
+
+  // Check for shortage warning on app load
+  useEffect(() => {
+    if (isAuthenticated && !isOfficeAssistant) {
+      api<ShortageWarning>('/account/shortage-warning')
+        .then(setShortageWarning)
+        .catch(console.error);
+    }
+  }, [isAuthenticated, isOfficeAssistant]);
+
+  const handleAcknowledgeShortage = async () => {
+    setAcknowledging(true);
+    try {
+      await api('/account/acknowledge-shortage', { method: 'POST' });
+      setShortageWarning(null);
+    } catch (error) {
+      console.error('Failed to acknowledge shortage:', error);
+    } finally {
+      setAcknowledging(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -35,6 +62,15 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Navigation isOfficeAssistant={isOfficeAssistant} />
+
+        {/* Shortage Warning Modal */}
+        {shortageWarning?.has_warning && (
+          <ShortageWarningModal
+            warning={shortageWarning}
+            onAcknowledge={handleAcknowledgeShortage}
+            loading={acknowledging}
+          />
+        )}
       </div>
     </BrowserRouter>
   );
