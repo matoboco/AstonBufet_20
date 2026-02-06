@@ -36,7 +36,20 @@ router.post('/request-code', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const { email } = validation.data;
+    // Normalize email to lowercase
+    const email = validation.data.email.trim().toLowerCase();
+
+    // Validate @aston.sk emails - must use short format without dots
+    if (email.endsWith('@aston.sk')) {
+      const localPart = email.split('@')[0];
+      if (localPart.includes('.')) {
+        res.status(400).json({
+          error: 'Prosím, použite krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)'
+        });
+        return;
+      }
+    }
+
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -68,7 +81,9 @@ router.post('/verify-code', async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const { email, code } = validation.data;
+    // Normalize email to lowercase
+    const email = validation.data.email.trim().toLowerCase();
+    const code = validation.data.code;
 
     // Find valid code
     const loginCode = await queryOne<LoginCode>(

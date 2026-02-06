@@ -16,10 +16,24 @@ export const Login = ({ onSuccess }: LoginProps) => {
   const handleRequestCode = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Normalize email to lowercase
+    const normalizedEmail = email.trim().toLowerCase();
+    setEmail(normalizedEmail);
+
+    // Validate @aston.sk emails - must use short format without dots
+    if (normalizedEmail.endsWith('@aston.sk')) {
+      const localPart = normalizedEmail.split('@')[0];
+      if (localPart.includes('.')) {
+        setError('Prosím, použite krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
-      await requestCode(email);
+      await requestCode(normalizedEmail);
       setStep('otp');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Nepodarilo sa odoslať kód');
