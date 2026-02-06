@@ -33,6 +33,16 @@ export const History = () => {
       <main className="p-4">
         <TransactionList transactions={transactions} loading={loading} />
       </main>
+
+      {/* Version info */}
+      <footer className="p-4 text-center text-xs text-gray-400">
+        <p>
+          v{__APP_VERSION__}{__GIT_COMMIT__ && ` (${__GIT_COMMIT__})`}
+        </p>
+        <p>
+          Build: {new Date(__BUILD_TIME__).toLocaleString('sk-SK', { timeZone: 'UTC' })} UTC
+        </p>
+      </footer>
     </div>
   );
 };

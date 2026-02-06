@@ -1,6 +1,27 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
+
+// Get version info at build time
+const getVersionInfo = () => {
+  const pkg = JSON.parse(readFileSync('./package.json', 'utf-8'));
+  let gitCommit = '';
+  try {
+    gitCommit = execSync('git rev-parse --short HEAD', { stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim();
+  } catch {
+    // Git not available in Docker build
+  }
+  const buildTime = new Date().toISOString();
+  return {
+    version: pkg.version,
+    gitCommit,
+    buildTime,
+  };
+};
+
+const versionInfo = getVersionInfo();
 
 export default defineConfig({
   plugins: [
@@ -55,6 +76,11 @@ export default defineConfig({
       },
     }),
   ],
+  define: {
+    __APP_VERSION__: JSON.stringify(versionInfo.version),
+    __GIT_COMMIT__: JSON.stringify(versionInfo.gitCommit),
+    __BUILD_TIME__: JSON.stringify(versionInfo.buildTime),
+  },
   server: {
     port: 3000,
     host: true,
