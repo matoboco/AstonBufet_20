@@ -5,17 +5,30 @@ dotenv.config();
 
 const isConsoleMode = process.env.SMTP_MODE === 'console';
 
-const transporter = isConsoleMode
-  ? null
-  : nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: false,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
+const createTransporter = () => {
+  if (isConsoleMode) return null;
+
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const secure = port === 465;
+
+  console.log(`SMTP Config: host=${host}, port=${port}, secure=${secure}, user=${process.env.SMTP_USER}`);
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    connectionTimeout: 10000, // 10 seconds
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
+};
+
+const transporter = createTransporter();
 
 export const sendOTPEmail = async (email: string, code: string): Promise<void> => {
   const subject = 'Firemný Bufet - Prihlasovací kód';
@@ -36,13 +49,19 @@ export const sendOTPEmail = async (email: string, code: string): Promise<void> =
     return;
   }
 
-  await transporter!.sendMail({
-    from: process.env.SMTP_FROM,
-    to: email,
-    subject,
-    text,
-    html,
-  });
+  try {
+    await transporter!.sendMail({
+      from: process.env.SMTP_FROM,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+    console.log(`OTP email sent to ${email}`);
+  } catch (error) {
+    console.error('Failed to send OTP email:', error);
+    throw new Error(`Nepodarilo sa odoslať email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
 
 export const sendReminderEmail = async (
@@ -69,11 +88,17 @@ export const sendReminderEmail = async (
     return;
   }
 
-  await transporter!.sendMail({
-    from: process.env.SMTP_FROM,
-    to: email,
-    subject,
-    text,
-    html,
-  });
+  try {
+    await transporter!.sendMail({
+      from: process.env.SMTP_FROM,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+    console.log(`Reminder email sent to ${email}`);
+  } catch (error) {
+    console.error('Failed to send reminder email:', error);
+    throw new Error(`Nepodarilo sa odoslať email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 };
