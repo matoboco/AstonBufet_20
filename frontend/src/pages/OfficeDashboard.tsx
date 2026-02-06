@@ -224,7 +224,7 @@ export const OfficeDashboard = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-primary-500 text-white p-4 pt-safe">
-        <h1 className="text-xl font-bold">Office Dashboard</h1>
+        <h1 className="text-xl font-bold">Správa bufetu</h1>
       </header>
 
       {/* Message */}
