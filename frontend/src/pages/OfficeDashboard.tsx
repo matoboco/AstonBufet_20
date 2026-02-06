@@ -47,8 +47,8 @@ export const OfficeDashboard = () => {
   const [inventorySaving, setInventorySaving] = useState(false);
   const [isWriteOff, setIsWriteOff] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const [debtorsData, productsData] = await Promise.all([
         api<AccountBalance[]>('/admin/debtors'),
@@ -117,7 +117,7 @@ export const OfficeDashboard = () => {
       setDepositModal(null);
       setDepositAmount('');
       setDepositNote('');
-      await fetchData();
+      await fetchData(false);
     } catch (error) {
       setMessage({
         type: 'error',
@@ -160,7 +160,7 @@ export const OfficeDashboard = () => {
       setMessage({ type: 'success', text: 'Sklad bol aktualizovaný' });
       setShowAddStock(false);
       setStockForm({ ean: '', name: '', quantity: '', price_cents: '' });
-      await fetchData();
+      await fetchData(false);
     } catch (error) {
       setMessage({
         type: 'error',
@@ -182,7 +182,7 @@ export const OfficeDashboard = () => {
       setMessage({ type: 'success', text: 'Názov produktu bol aktualizovaný' });
       setEditProduct(null);
       setEditName('');
-      await fetchData();
+      await fetchData(false);
     } catch (error) {
       setMessage({
         type: 'error',
@@ -211,7 +211,7 @@ export const OfficeDashboard = () => {
       setInventoryQuantity('');
       setInventoryReason('');
       setIsWriteOff(false);
-      await fetchData();
+      await fetchData(false);
     } catch (error) {
       setMessage({
         type: 'error',
