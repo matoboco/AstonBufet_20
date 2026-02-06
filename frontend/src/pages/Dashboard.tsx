@@ -13,18 +13,21 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
   const [balance, setBalance] = useState<AccountBalance | null>(null);
   const [transactions, setTransactions] = useState<AccountEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(false);
         const [balanceData, historyData] = await Promise.all([
           api<AccountBalance>('/account/my-balance'),
           api<AccountEntry[]>('/account/my-history'),
         ]);
         setBalance(balanceData);
         setTransactions(historyData);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data:', error);
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
+        setError(true);
       } finally {
         setLoading(false);
       }
@@ -63,7 +66,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
       {/* Content */}
       <main className="p-4 space-y-6">
         {/* Balance Card */}
-        <BalanceCard balance={balance} loading={loading} />
+        <BalanceCard balance={balance} loading={loading} error={error} />
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">

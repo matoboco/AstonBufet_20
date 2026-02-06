@@ -45,6 +45,7 @@ export const OfficeDashboard = () => {
   const [inventoryQuantity, setInventoryQuantity] = useState('');
   const [inventoryReason, setInventoryReason] = useState('');
   const [inventorySaving, setInventorySaving] = useState(false);
+  const [isWriteOff, setIsWriteOff] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -202,12 +203,14 @@ export const OfficeDashboard = () => {
           product_id: inventoryProduct.id,
           actual_quantity: parseInt(inventoryQuantity),
           reason: inventoryReason || undefined,
+          is_write_off: isWriteOff,
         },
       });
       setMessage({ type: 'success', text: result.message });
       setInventoryProduct(null);
       setInventoryQuantity('');
       setInventoryReason('');
+      setIsWriteOff(false);
       await fetchData();
     } catch (error) {
       setMessage({
@@ -718,7 +721,7 @@ export const OfficeDashboard = () => {
               )}
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Dôvod (voliteľné)
               </label>
@@ -731,6 +734,26 @@ export const OfficeDashboard = () => {
               />
             </div>
 
+            {/* Write-off checkbox - only show when there's a shortage */}
+            {inventoryQuantity && parseInt(inventoryQuantity) < inventoryProduct.stock_quantity && (
+              <div className="mb-6">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    checked={isWriteOff}
+                    onChange={(e) => setIsWriteOff(e.target.checked)}
+                  />
+                  <span className="text-sm text-gray-700">
+                    Odpis (neoznačovať ako manko)
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 mt-1 ml-8">
+                  Použite pre expirovaný alebo poškodený tovar
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 className="btn btn-secondary flex-1"
@@ -738,6 +761,7 @@ export const OfficeDashboard = () => {
                   setInventoryProduct(null);
                   setInventoryQuantity('');
                   setInventoryReason('');
+                  setIsWriteOff(false);
                 }}
                 disabled={inventorySaving}
               >

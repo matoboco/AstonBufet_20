@@ -15,8 +15,10 @@ export const Products = () => {
   const [purchasing, setPurchasing] = useState(false);
   const [showScanner, setShowScanner] = useState(searchParams.get('scan') === 'true');
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     try {
       const data = await api<Product[]>('/products');
       setProducts(data);
@@ -24,6 +26,7 @@ export const Products = () => {
       console.error('Failed to fetch products:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -83,8 +86,8 @@ export const Products = () => {
       setPurchasing(false);
       setSelectedProduct(null);
 
-      // Refresh products in background to update stock
-      fetchProducts();
+      // Refresh products to update stock
+      fetchProducts(true);
     } catch (error) {
       setMessage({
         type: 'error',
@@ -139,6 +142,25 @@ export const Products = () => {
               />
             </svg>
           </div>
+          <button
+            className="btn btn-secondary p-3"
+            onClick={() => fetchProducts(true)}
+            disabled={refreshing}
+          >
+            <svg
+              className={`w-6 h-6 ${refreshing ? 'animate-spin' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          </button>
           <button
             className="btn btn-primary p-3"
             onClick={() => {

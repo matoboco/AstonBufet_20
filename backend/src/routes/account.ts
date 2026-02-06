@@ -153,6 +153,7 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
     const cutoffDate = lastAck?.acknowledged_at || user?.created_at || new Date();
 
     // Get total shortage (negative differences) since cutoff date
+    // Exclude write-offs (intentional removals like expired goods)
     const shortageQuery = `
       SELECT
         COALESCE(SUM(ABS(sa.difference)), 0)::integer as total_shortage,
@@ -160,7 +161,7 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
         MIN(sa.created_at) as first_shortage_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
-      WHERE sa.difference < 0 AND sa.created_at > $1
+      WHERE sa.difference < 0 AND sa.created_at > $1 AND (sa.is_write_off = FALSE OR sa.is_write_off IS NULL)
     `;
 
     const shortageResult = await queryOne<{ total_shortage: number; total_value_cents: number; first_shortage_at: Date | null }>(
@@ -176,12 +177,12 @@ router.get('/shortage-warning', authenticateToken, async (req: AuthenticatedRequ
       return;
     }
 
-    // Get individual adjustments for display
+    // Get individual adjustments for display (exclude write-offs)
     const adjustmentsQuery = `
       SELECT p.name as product_name, sa.difference, p.price_cents, sa.created_at
       FROM stock_adjustments sa
       JOIN products p ON sa.product_id = p.id
-      WHERE sa.difference < 0 AND sa.created_at > $1
+      WHERE sa.difference < 0 AND sa.created_at > $1 AND (sa.is_write_off = FALSE OR sa.is_write_off IS NULL)
       ORDER BY sa.created_at DESC
     `;
 

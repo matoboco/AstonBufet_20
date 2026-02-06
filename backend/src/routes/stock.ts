@@ -99,7 +99,7 @@ router.post('/adjustment', authenticateToken, requireRole('office_assistant'), a
   const client = await getClient();
 
   try {
-    const { product_id, actual_quantity, reason } = req.body;
+    const { product_id, actual_quantity, reason, is_write_off } = req.body;
 
     if (!product_id) {
       res.status(400).json({ error: 'product_id je povinný' });
@@ -139,10 +139,10 @@ router.post('/adjustment', authenticateToken, requireRole('office_assistant'), a
     // Record the adjustment
     const adjustmentResult = await client.query<StockAdjustment>(
       `INSERT INTO stock_adjustments
-       (product_id, expected_quantity, actual_quantity, difference, reason, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       (product_id, expected_quantity, actual_quantity, difference, reason, created_by, is_write_off)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [product_id, expected_quantity, actual_quantity, difference, reason || null, req.user?.userId || null]
+      [product_id, expected_quantity, actual_quantity, difference, reason || null, req.user?.userId || null, is_write_off === true]
     );
 
     // Clear existing batches for this product
@@ -158,6 +158,17 @@ router.post('/adjustment', authenticateToken, requireRole('office_assistant'), a
 
     await client.query('COMMIT');
 
+    let message: string;
+    if (is_write_off === true && difference < 0) {
+      message = `Odpísané zo skladu: ${Math.abs(difference)} ks`;
+    } else if (difference < 0) {
+      message = `Zaznamenané manko: ${Math.abs(difference)} ks`;
+    } else if (difference > 0) {
+      message = `Zaznamenný prebytok: ${difference} ks`;
+    } else {
+      message = 'Stav skladu súhlasí';
+    }
+
     res.json({
       success: true,
       adjustment: adjustmentResult.rows[0],
@@ -166,11 +177,7 @@ router.post('/adjustment', authenticateToken, requireRole('office_assistant'), a
         name: product.name,
         ean: product.ean,
       },
-      message: difference < 0
-        ? `Zaznamenané manko: ${Math.abs(difference)} ks`
-        : difference > 0
-        ? `Zaznamenný prebytok: ${difference} ks`
-        : 'Stav skladu súhlasí',
+      message,
     });
   } catch (error) {
     await client.query('ROLLBACK');
