@@ -66,15 +66,16 @@ export const sendOTPEmail = async (email: string, code: string): Promise<void> =
 
 export const sendReminderEmail = async (
   email: string,
-  balanceEur: number
+  balanceEur: number | string
 ): Promise<void> => {
+  const balance = Number(balanceEur);
   const subject = 'Firemný Bufet - Pripomienka dlhu';
-  const text = `Dobrý deň,\n\nVáš aktuálny zostatok v bufete je: ${balanceEur.toFixed(2)} €\n\nProsím, vyrovnajte svoj dlh u office assistant.\n\nĎakujeme,\nFiremný Bufet`;
+  const text = `Dobrý deň,\n\nVáš aktuálny zostatok v bufete je: ${balance.toFixed(2)} €\n\nProsím, vyrovnajte svoj dlh u office assistant.\n\nĎakujeme,\nFiremný Bufet`;
   const html = `
     <h2>Firemný Bufet - Pripomienka</h2>
     <p>Dobrý deň,</p>
     <p>Váš aktuálny zostatok v bufete je:</p>
-    <h1 style="font-size: 28px; color: #ef4444;">${balanceEur.toFixed(2)} €</h1>
+    <h1 style="font-size: 28px; color: #ef4444;">${balance.toFixed(2)} €</h1>
     <p>Prosím, vyrovnajte svoj dlh u office assistant.</p>
     <p>Ďakujeme,<br/>Firemný Bufet</p>
   `;
@@ -83,7 +84,7 @@ export const sendReminderEmail = async (
     console.log('=== REMINDER EMAIL (Console Mode) ===');
     console.log(`To: ${email}`);
     console.log(`Subject: ${subject}`);
-    console.log(`Balance: ${balanceEur.toFixed(2)} €`);
+    console.log(`Balance: ${balance.toFixed(2)} €`);
     console.log('=====================================');
     return;
   }

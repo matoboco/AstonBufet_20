@@ -77,10 +77,21 @@ export const OfficeDashboard = () => {
 
   const handleSendReminders = async () => {
     try {
-      const result = await api<{ message: string }>('/admin/reminder', {
+      const result = await api<{
+        message: string;
+        sent_to?: { email: string; success: boolean; error?: string }[];
+      }>('/admin/reminder', {
         method: 'POST',
       });
-      setMessage({ type: 'success', text: result.message });
+
+      // Check if there were failures
+      const failures = result.sent_to?.filter((r) => !r.success) || [];
+      if (failures.length > 0) {
+        const errorDetails = failures.map((f) => `${f.email}: ${f.error}`).join('; ');
+        setMessage({ type: 'error', text: `${result.message}. Chyby: ${errorDetails}` });
+      } else {
+        setMessage({ type: 'success', text: result.message });
+      }
     } catch (error) {
       setMessage({
         type: 'error',
