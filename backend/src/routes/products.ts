@@ -83,16 +83,28 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 router.put('/:id', authenticateToken, requireRole('office_assistant'), async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, ean } = req.body;
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       res.status(400).json({ error: 'Názov produktu je povinný' });
       return;
     }
 
+    // Check if new EAN is already used by another product
+    if (ean) {
+      const existingProduct = await queryOne<Product>(
+        'SELECT id FROM products WHERE ean = $1 AND id != $2',
+        [ean.trim(), id]
+      );
+      if (existingProduct) {
+        res.status(400).json({ error: 'EAN kód už používa iný produkt' });
+        return;
+      }
+    }
+
     const product = await queryOne<Product>(
-      'UPDATE products SET name = $1 WHERE id = $2 RETURNING *',
-      [name.trim(), id]
+      'UPDATE products SET name = $1, ean = COALESCE($2, ean) WHERE id = $3 RETURNING *',
+      [name.trim(), ean?.trim() || null, id]
     );
 
     if (!product) {
