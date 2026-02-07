@@ -4,6 +4,7 @@ import { api } from '../utils/api';
 import { AccountBalance, AccountEntry } from '../types';
 import { BalanceCard } from '../components/BalanceCard';
 import { TransactionList } from '../components/TransactionList';
+import { Logo } from '../components/Logo';
 
 export const Dashboard = () => {
   const [balance, setBalance] = useState<AccountBalance | null>(null);
@@ -36,7 +37,7 @@ export const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 p-4 pt-safe">
-        <h1 className="text-xl font-bold text-gray-900">Domov</h1>
+        <Logo className="h-7" />
       </header>
 
       {/* Content */}
