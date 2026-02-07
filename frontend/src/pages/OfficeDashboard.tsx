@@ -43,6 +43,10 @@ export const OfficeDashboard = () => {
   const [showEditScanner, setShowEditScanner] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Delete product
+  const [deleteProduct, setDeleteProduct] = useState<ProductWithStock | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   // Inventory modal
   const [inventoryProduct, setInventoryProduct] = useState<ProductWithStock | null>(null);
   const [inventoryQuantity, setInventoryQuantity] = useState('');
@@ -238,6 +242,24 @@ export const OfficeDashboard = () => {
   const handleProductScan = (ean: string) => {
     setShowProductScanner(false);
     setProductSearch(ean);
+  };
+
+  const handleDeleteProduct = async () => {
+    if (!deleteProduct) return;
+    setDeleting(true);
+    try {
+      await api(`/products/${deleteProduct.id}`, { method: 'DELETE' });
+      setMessage({ type: 'success', text: `Produkt "${deleteProduct.name}" bol zmazaný` });
+      setDeleteProduct(null);
+      await fetchData(false);
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error instanceof Error ? error.message : 'Nepodarilo sa zmazať produkt',
+      });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Remove diacritics for search
@@ -469,6 +491,14 @@ export const OfficeDashboard = () => {
                       >
                         Inventúra
                       </button>
+                      {Number(product.stock_quantity) === 0 && (
+                        <button
+                          className="btn text-sm py-2 bg-red-500 text-white hover:bg-red-600"
+                          onClick={() => setDeleteProduct(product)}
+                        >
+                          Zmazať
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -884,6 +914,38 @@ export const OfficeDashboard = () => {
                 disabled={inventorySaving || inventoryQuantity === ''}
               >
                 {inventorySaving ? 'Ukladám...' : 'Potvrdiť'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Product Confirmation Modal */}
+      {deleteProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+            <h2 className="text-xl font-bold mb-2">Zmazať produkt</h2>
+            <p className="text-gray-700 mb-4">
+              Naozaj chcete zmazať produkt <strong>{deleteProduct.name}</strong> ({deleteProduct.ean})?
+            </p>
+            <p className="text-sm text-red-500 mb-6">
+              Táto akcia je nevratná.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                className="btn btn-secondary flex-1"
+                onClick={() => setDeleteProduct(null)}
+                disabled={deleting}
+              >
+                Zrušiť
+              </button>
+              <button
+                className="btn flex-1 bg-red-500 text-white hover:bg-red-600"
+                onClick={handleDeleteProduct}
+                disabled={deleting}
+              >
+                {deleting ? 'Mažem...' : 'Zmazať'}
               </button>
             </div>
           </div>
