@@ -11,17 +11,17 @@ const createTransporter = () => {
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT || '587');
   const secure = port === 465;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
 
-  console.log(`SMTP Config: host=${host}, port=${port}, secure=${secure}, user=${process.env.SMTP_USER}`);
+  console.log(`SMTP Config: host=${host}, port=${port}, secure=${secure}, auth=${user ? 'yes' : 'no'}`);
 
   return nodemailer.createTransport({
     host,
     port,
     secure,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
+    // Only include auth if credentials are provided
+    ...(user && pass ? { auth: { user, pass } } : {}),
     connectionTimeout: 10000, // 10 seconds
     greetingTimeout: 10000,
     socketTimeout: 15000,
