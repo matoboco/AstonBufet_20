@@ -119,6 +119,40 @@ router.put('/:id', authenticateToken, requireRole('office_assistant'), async (re
   }
 });
 
+// DELETE /products/:id - Delete product (office_assistant only, stock must be 0)
+router.delete('/:id', authenticateToken, requireRole('office_assistant'), async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const product = await queryOne<ProductWithStock>(`
+      SELECT
+        p.*,
+        COALESCE(SUM(sb.quantity), 0)::integer as stock_quantity
+      FROM products p
+      LEFT JOIN stock_batches sb ON p.id = sb.product_id
+      WHERE p.id = $1
+      GROUP BY p.id
+    `, [id]);
+
+    if (!product) {
+      res.status(404).json({ error: 'Produkt nebol nájdený' });
+      return;
+    }
+
+    if (product.stock_quantity > 0) {
+      res.status(400).json({ error: 'Nie je možné zmazať produkt s nenulovým stavom skladu' });
+      return;
+    }
+
+    await query('DELETE FROM products WHERE id = $1', [id]);
+
+    res.json({ message: 'Produkt bol zmazaný' });
+  } catch (error) {
+    console.error('Delete product error:', error);
+    res.status(500).json({ error: 'Nepodarilo sa zmazať produkt' });
+  }
+});
+
 // GET /products/:id/price-preview - Calculate FIFO price for quantity
 router.get('/:id/price-preview', async (req: Request, res: Response): Promise<void> => {
   try {
