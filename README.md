@@ -45,18 +45,78 @@ Správca bufetu má prístup k dashboardu s dvoma kartami:
 4. Suma sa automaticky odpočíta z jeho účtu
 5. Sklad sa aktualizuje (FIFO metóda)
 
-### Evidencia manka
+### Vyrovnanie dlhu a vklad hotovosti
 
-1. Office assistant vykoná inventúru - zadá skutočný stav skladu
-2. Systém porovná so stavom v databáze a zaznamená rozdiel
-3. Pri zistení manka sú všetci zamestnanci upozornení pri najbližšom otvorení aplikácie
-4. Zamestnanec musí potvrdiť, že berie upozornenie na vedomie
-5. Odpisy (expirovaný/poškodený tovar) sa nezapočítavajú do upozornení
+Zamestnanec príde za office assistant vyrovnať svoj dlh:
+
+1. Office assistant otvorí kartu **Dlžníci** a vyhľadá zamestnanca
+2. Zamestnanec odovzdá hotovosť (napr. 10 €)
+3. Office assistant zadá sumu do políčka **Vklad** a potvrdí
+
+**Príklad 1: Presné vyrovnanie**
+- Zamestnanec má dlh -8.50 €
+- Vloží 8.50 €
+- Výsledný zostatok: 0.00 €
+
+**Príklad 2: Vklad do plusu**
+- Zamestnanec má dlh -5.00 €
+- Vloží 10.00 €
+- Výsledný zostatok: +5.00 € (kredit na budúce nákupy)
+
+**Príklad 3: Príspevok na manko**
+- Zamestnanec má dlh -5.00 €
+- Chce vložiť 10.00 €, ale nechce mať kredit
+- Office assistant označí 5.00 € ako **príspevok na manko**
+- Výsledný zostatok: 0.00 €
+- Príspevok 5.00 € sa eviduje v systéme ako pokrytie manka
+
+Príspevok na manko je dobrovoľný. Zamestnanec môže prispieť ak si uvedomí, že niečo z chýbajúceho tovaru mohol mať on bez zaevidovania.
+
+### Inventúra a evidencia manka
+
+Office assistant pravidelne kontroluje skutočný stav skladu:
+
+1. Na karte **Sklad** vyberie produkt
+2. Zadá **skutočné množstvo** na sklade
+3. Systém porovná s evidovaným stavom a vypočíta rozdiel:
+   - **Manko** (-)  = chýba tovar (niekto si vzal bez zaevidovania)
+   - **Prebytok** (+) = viac ako má byť (zriedkavé, možná chyba pri naskladnení)
+
+**Odpis tovaru:**
+- Ak je tovar poškodený alebo expirovaný, označí sa ako **odpis**
+- Odpisy sa nezapočítavajú do manka a negenerujú upozornenia
+
+### Upozornenia na manko
+
+Pri zistení manka systém upozorní všetkých zamestnancov:
+
+1. Office assistant vykoná inventúru a zistí manko
+2. Pri najbližšom otvorení aplikácie sa každému zamestnancovi zobrazí **modálne okno**
+3. Okno obsahuje:
+   - Informáciu o zistenom manku (napr. "Boli zistené chýbajúce položky")
+   - Pripomienku na evidovanie všetkých nákupov
+   - Tlačidlo na potvrdenie
+4. Zamestnanec musí potvrdiť "Beriem na vedomie" aby mohol pokračovať v aplikácii
+5. Upozornenie sa zobrazí len raz (po potvrdení sa neukazuje znova)
+
+**Prečo upozorňujeme všetkých?**
+Manko môže byť spôsobené hocikým - niekto si mohol zabudnúť zaevidovať nákup. Namiesto obviňovania jednotlivcov systém pripomenie všetkým, aby si dávali pozor.
 
 ### Pripomienky dlhov
 
 - Automatické emailové pripomienky na 1. deň v mesiaci (pre dlhy > 5 EUR)
 - Manuálne odoslanie pripomienok office assistant kedykoľvek
+- Email obsahuje aktuálny zostatok a výzvu na vyrovnanie
+- Ak má používateľ zadané meno, email ho osloví osobne ("Ahoj Peter")
+
+### Profil používateľa
+
+Každý zamestnanec má prístup k svojmu profilu:
+
+- **Osobné údaje** - email a voliteľné meno (použije sa v emailových pripomienkach)
+- **História nákupov** - kompletný zoznam transakcií
+- **Verzia aplikácie** - aktuálna verzia s možnosťou kontroly aktualizácií
+- **Odhlásenie** - bezpečné odhlásenie z aplikácie
 
 ### PWA funkcie
 
