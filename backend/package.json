@@ -10,7 +10,7 @@
     "copy-migrations": "node -e \"require('fs').cpSync('db/migrations', 'dist/db/migrations', {recursive: true})\"",
     "start": "bun run src/index.ts",
     "start:node": "node dist/index.js",
-    "reminder": "bun run src/reminder.ts",
+    "reminder:now": "bun run src/reminder.ts",
     "migrate": "bun run src/migrations/runner.ts run",
     "migrate:status": "bun run src/migrations/runner.ts status",
     "migrate:rollback": "bun run src/migrations/runner.ts rollback",

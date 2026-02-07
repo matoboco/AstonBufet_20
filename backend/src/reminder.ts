@@ -1,4 +1,3 @@
-import cron from 'node-cron';
 import dotenv from 'dotenv';
 import { query } from './db';
 import { sendReminderEmail } from './email';
@@ -8,7 +7,7 @@ dotenv.config();
 
 const DEBT_THRESHOLD = -5; // Send reminders for balance < -5€
 
-const sendReminders = async (): Promise<void> => {
+export const sendReminders = async (): Promise<void> => {
   console.log(`[${new Date().toISOString()}] Running reminder job...`);
 
   try {
@@ -40,37 +39,11 @@ const sendReminders = async (): Promise<void> => {
   }
 };
 
-// Check if running as main script
-const isMainModule = require.main === module;
-
-if (isMainModule) {
-  const runOnce = process.argv.includes('--once');
-
-  if (runOnce) {
-    // Run once and exit
-    console.log('Running reminder job once...');
-    sendReminders().then(() => {
-      console.log('Done.');
-      process.exit(0);
-    });
-  } else {
-    // Schedule cron job: 1st day of month at 9:00
-    console.log(`
-╔════════════════════════════════════════════╗
-║     Aston Bufet 2.0 Reminder Service       ║
-║     Schedule: 1st of month at 9:00         ║
-╚════════════════════════════════════════════╝
-    `);
-
-    cron.schedule('0 9 1 * *', () => {
-      sendReminders();
-    }, {
-      timezone: 'Europe/Bratislava',
-    });
-
-    console.log('Cron job scheduled. Waiting for trigger...');
-    console.log('Run with --once to send reminders immediately.');
-  }
+// CLI: bun run src/reminder.ts --once
+if (require.main === module) {
+  console.log('Running reminder job manually...');
+  sendReminders().then(() => {
+    console.log('Done.');
+    process.exit(0);
+  });
 }
-
-export { sendReminders };

@@ -41,20 +41,6 @@ services:
     networks:
       - bufet-internal
 
-  reminder:
-    build: ./backend
-    command: ["bun", "run", "src/reminder.ts"]
-    environment:
-      DATABASE_URL: postgresql://bufet:secret@db:5432/bufet
-      SMTP_MODE: console
-      RUN_MIGRATIONS: "false"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - bufet-internal
-
 networks:
   bufet-internal:
     driver: bridge

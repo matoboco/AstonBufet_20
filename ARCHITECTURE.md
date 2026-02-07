@@ -3,22 +3,21 @@
 ## Prehľad systému
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Kubernetes                            │
-├─────────────┬─────────────┬─────────────┬──────────────────┤
-│  frontend   │   backend   │  reminder   │        db        │
-│  (nginx)    │  (express)  │  (cronjob)  │   (postgres)     │
-│   :80       │    :3001    │             │     :5432        │
-└─────────────┴─────────────┴─────────────┴──────────────────┘
+┌───────────────────────────────────────────────┐
+│                  Kubernetes                    │
+├─────────────┬─────────────┬──────────────────┤
+│  frontend   │   backend   │        db        │
+│  (nginx)    │ (bun+cron)  │   (postgres)     │
+│   :80       │    :3001    │     :5432        │
+└─────────────┴─────────────┴──────────────────┘
 ```
 
-Aplikácia pozostáva zo 4 služieb:
+Aplikácia pozostáva z 3 služieb:
 
 | Služba | Technológia | Účel |
 |--------|-------------|------|
 | **frontend** | Nginx + React SPA | Používateľské rozhranie (PWA) |
-| **backend** | Bun + Express | REST API server |
-| **reminder** | Bun (CronJob) | Automatické emailové pripomienky (1. v mesiaci) |
+| **backend** | Bun + Express + Cron | REST API server + automatické pripomienky |
 | **db** | PostgreSQL 16 | Databáza |
 
 ---

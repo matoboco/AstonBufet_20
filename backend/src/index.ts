@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import cron from 'node-cron';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { sendReminders } from './reminder';
 
 // Load environment variables
 dotenv.config();
@@ -110,6 +112,14 @@ const start = async () => {
 ║     Running on port ${PORT}                    ║
 ╚════════════════════════════════════════════╝
       `);
+
+      // Schedule reminder cron job: 1st day of month at 9:00
+      cron.schedule('0 9 1 * *', () => {
+        sendReminders();
+      }, {
+        timezone: 'Europe/Bratislava',
+      });
+      console.log('Reminder cron scheduled: 1st of month at 9:00 (Europe/Bratislava)');
     });
   } catch (error) {
     console.error('Failed to start server:', error);
