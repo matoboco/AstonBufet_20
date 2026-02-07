@@ -4,21 +4,21 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Docker Compose                          │
+│                        Kubernetes                            │
 ├─────────────┬─────────────┬─────────────┬──────────────────┤
 │  frontend   │   backend   │  reminder   │        db        │
-│  (nginx)    │  (express)  │   (cron)    │   (postgres)     │
+│  (nginx)    │  (express)  │  (cronjob)  │   (postgres)     │
 │   :80       │    :3001    │             │     :5432        │
 └─────────────┴─────────────┴─────────────┴──────────────────┘
 ```
 
-Aplikácia pozostáva zo 4 Docker kontajnerov:
+Aplikácia pozostáva zo 4 služieb:
 
 | Služba | Technológia | Účel |
 |--------|-------------|------|
 | **frontend** | Nginx + React SPA | Používateľské rozhranie (PWA) |
 | **backend** | Node.js + Express | REST API server |
-| **reminder** | Node.js (cron job) | Automatické emailové pripomienky (1. v mesiaci) |
+| **reminder** | Node.js (CronJob) | Automatické emailové pripomienky (1. v mesiaci) |
 | **db** | PostgreSQL 16 | Databáza |
 
 ---

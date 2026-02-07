@@ -139,11 +139,15 @@ Každý zamestnanec má prístup k svojmu profilu:
 
 ## Spustenie
 
+### Lokálny vývoj
+
 ```bash
 docker compose up --build
 ```
 
-Aplikácia bude dostupná na porte 80.
+### Produkcia
+
+Aplikácia beží v Kubernetes klastri.
 
 ## Dokumentácia
 
