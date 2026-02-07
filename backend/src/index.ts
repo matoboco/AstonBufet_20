@@ -55,9 +55,16 @@ app.get('/health', (_req, res) => {
 
 // Version endpoint - returns build info for PWA update detection
 const getBuildTime = (): string => {
-  const buildTimeFile = join(__dirname, 'build-time.txt');
-  if (existsSync(buildTimeFile)) {
-    return readFileSync(buildTimeFile, 'utf-8').trim();
+  // Try multiple locations (Bun runs from src, Node from dist)
+  const locations = [
+    join(__dirname, 'build-time.txt'),
+    join(__dirname, '../build-time.txt'),
+    join(process.cwd(), 'build-time.txt'),
+  ];
+  for (const loc of locations) {
+    if (existsSync(loc)) {
+      return readFileSync(loc, 'utf-8').trim();
+    }
   }
   return new Date().toISOString();
 };

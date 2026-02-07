@@ -17,8 +17,8 @@ Aplikácia pozostáva zo 4 služieb:
 | Služba | Technológia | Účel |
 |--------|-------------|------|
 | **frontend** | Nginx + React SPA | Používateľské rozhranie (PWA) |
-| **backend** | Node.js + Express | REST API server |
-| **reminder** | Node.js (CronJob) | Automatické emailové pripomienky (1. v mesiaci) |
+| **backend** | Bun + Express | REST API server |
+| **reminder** | Bun (CronJob) | Automatické emailové pripomienky (1. v mesiaci) |
 | **db** | PostgreSQL 16 | Databáza |
 
 ---
@@ -82,12 +82,21 @@ frontend/src/
 
 ### Technológie
 
-- **Node.js** + TypeScript
+- **Bun** - JavaScript/TypeScript runtime (rýchlejší štart, natívna podpora TS)
 - **Express** - HTTP framework
 - **PostgreSQL** - databáza (pg driver)
 - **JWT** - autentifikácia
 - **Nodemailer** - odosielanie emailov
 - **Zod** - validácia vstupov
+
+### Prečo Bun?
+
+| Výhoda | Popis |
+|--------|-------|
+| Rýchlejší štart | 2-4x rýchlejšie spustenie servera |
+| Natívny TypeScript | Bez potreby kompilácie (tsc) |
+| Rýchlejšia inštalácia | `bun install` je 10-25x rýchlejší ako `npm` |
+| Nižšia pamäť | Menšia spotreba RAM |
 
 ### Štruktúra
 

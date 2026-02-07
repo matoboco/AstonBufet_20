@@ -1,12 +1,12 @@
-FROM node:20-alpine
+FROM oven/bun:1-alpine
 
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY package.json bun.lock* ./
 
 # Install dependencies
-RUN npm ci
+RUN bun install --frozen-lockfile || bun install
 
 # Copy source code and migrations
 COPY src ./src
@@ -14,14 +14,11 @@ COPY db ./db
 COPY tsconfig.json ./
 COPY scripts ./scripts
 
-# Build TypeScript and copy migrations to dist
-RUN npm run build
-
 # Save build time to file
-RUN date -u +%Y-%m-%dT%H:%M:%SZ > /app/dist/build-time.txt
+RUN date -u +%Y-%m-%dT%H:%M:%SZ > /app/build-time.txt
 
 # Expose port
 EXPOSE 3001
 
 # Start server
-CMD ["node", "dist/index.js"]
+CMD ["bun", "run", "src/index.ts"]

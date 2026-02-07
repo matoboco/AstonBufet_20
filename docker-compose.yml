@@ -43,7 +43,7 @@ services:
 
   reminder:
     build: ./backend
-    command: ["node", "dist/reminder.js"]
+    command: ["bun", "run", "src/reminder.ts"]
     environment:
       DATABASE_URL: postgresql://bufet:secret@db:5432/bufet
       SMTP_MODE: console
