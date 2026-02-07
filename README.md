@@ -144,3 +144,7 @@ docker compose up --build
 ```
 
 Aplikácia bude dostupná na porte 80.
+
+## Dokumentácia
+
+- [Architektúra](ARCHITECTURE.md) - technický prehľad backendu, frontendu a databázy
