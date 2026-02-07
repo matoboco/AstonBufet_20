@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(node scripts/generate-icons.js:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl:*)",
+      "Bash(git pull:*)",
+      "Bash(docker logs:*)",
+      "Bash(git restore:*)",
+      "Bash(docker compose up:*)",
+      "Bash(docker exec:*)",
+      "Bash(grep:*)",
+      "Bash(git reset:*)",
+      "Bash(docker compose build:*)",
+      "Bash(docker compose exec:*)",
+      "Bash(where:*)",
+      "Bash(git fetch:*)",
+      "Bash(git branch:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(git revert:*)",
+      "Bash(docker restart:*)"
+    ]
+  }
+}

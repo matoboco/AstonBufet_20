@@ -6,8 +6,8 @@ import { ShortageWarningModal } from './components/ShortageWarningModal';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Products } from './pages/Products';
-import { History } from './pages/History';
 import { OfficeDashboard } from './pages/OfficeDashboard';
+import { Profile } from './pages/Profile';
 import { api } from './utils/api';
 import { ShortageWarning } from './types';
 
@@ -55,7 +55,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard onLogout={logout} />} />
           <Route path="/products" element={<Products />} />
-          <Route path="/history" element={<History />} />
+          <Route path="/profile" element={<Profile />} />
           {isOfficeAssistant && (
             <Route path="/office" element={<OfficeDashboard />} />
           )}

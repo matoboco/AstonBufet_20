@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { query, queryOne } from '../db';
 import { authenticateToken, requireRole, requireSelfOrRole } from '../middleware';
 import { depositSchema } from '../validation';
-import { AuthenticatedRequest, AccountBalance, AccountHistoryEntry, ShortageAcknowledgement } from '../types';
+import { AuthenticatedRequest, AccountBalance, AccountHistoryEntry, ShortageAcknowledgement, ShortageSummary } from '../types';
 
 const router = Router();
 
@@ -90,7 +90,7 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
       return;
     }
 
-    const { user_id, amount_cents, note } = validation.data;
+    const { user_id, amount_cents, note, contribution_cents } = validation.data;
 
     // Verify user exists
     const user = await queryOne<{ id: string; email: string }>(
@@ -103,13 +103,25 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
       return;
     }
 
+    // Calculate actual deposit amount (minus contribution)
+    const actualDepositCents = contribution_cents ? amount_cents - contribution_cents : amount_cents;
+
     // Create positive entry (deposit)
     const description = note || 'Vklad / Vyrovnanie dlhu';
     await query(
       `INSERT INTO account_entries (user_id, amount_cents, description)
        VALUES ($1, $2, $3)`,
-      [user_id, amount_cents, description]
+      [user_id, actualDepositCents, description]
     );
+
+    // Record contribution if provided
+    if (contribution_cents && contribution_cents > 0) {
+      await query(
+        `INSERT INTO shortage_contributions (user_id, amount_cents, description, recorded_by)
+         VALUES ($1, $2, $3, $4)`,
+        [user_id, contribution_cents, 'Príspevok na manko', req.user!.userId]
+      );
+    }
 
     // Get updated balance
     const balance = await queryOne<AccountBalance>(
@@ -122,15 +134,38 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
       deposit: {
         user_id,
         user_email: user.email,
-        amount_cents,
-        amount_eur: amount_cents / 100,
+        amount_cents: actualDepositCents,
+        amount_eur: actualDepositCents / 100,
         description,
+        contribution_cents: contribution_cents || 0,
+        contribution_eur: (contribution_cents || 0) / 100,
       },
       new_balance_eur: balance?.balance_eur || 0,
     });
   } catch (error) {
     console.error('Deposit error:', error);
     res.status(500).json({ error: 'Failed to process deposit' });
+  }
+});
+
+// GET /account/shortage-summary - Get total shortage and contributions (office_assistant only)
+router.get('/shortage-summary', authenticateToken, requireRole('office_assistant'), async (_req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const summary = await queryOne<ShortageSummary>(
+      'SELECT * FROM shortage_summary'
+    );
+
+    res.json({
+      total_shortage_cents: summary?.total_shortage_cents || 0,
+      total_shortage_eur: (summary?.total_shortage_cents || 0) / 100,
+      total_contributions_cents: summary?.total_contributions_cents || 0,
+      total_contributions_eur: (summary?.total_contributions_cents || 0) / 100,
+      remaining_shortage_cents: (summary?.total_shortage_cents || 0) - (summary?.total_contributions_cents || 0),
+      remaining_shortage_eur: ((summary?.total_shortage_cents || 0) - (summary?.total_contributions_cents || 0)) / 100,
+    });
+  } catch (error) {
+    console.error('Get shortage summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch shortage summary' });
   }
 });
 

@@ -25,7 +25,7 @@ const sendReminders = async (): Promise<void> => {
 
     for (const debtor of debtors) {
       try {
-        await sendReminderEmail(debtor.email, debtor.balance_eur);
+        await sendReminderEmail(debtor.email, debtor.balance_eur, debtor.name);
         console.log(`  ✓ Sent reminder to ${debtor.email} (${Number(debtor.balance_eur).toFixed(2)}€)`);
         successCount++;
       } catch (error) {

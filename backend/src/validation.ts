@@ -7,6 +7,7 @@ export const requestCodeSchema = z.object({
 export const verifyCodeSchema = z.object({
   email: z.string().email('Invalid email format'),
   code: z.string().length(6, 'Code must be 6 digits'),
+  name: z.string().optional(),
 });
 
 export const purchaseSchema = z.object({
@@ -25,6 +26,7 @@ export const depositSchema = z.object({
   user_id: z.string().uuid('Invalid user ID'),
   amount_cents: z.number().int().positive('Amount must be positive'),
   note: z.string().optional(),
+  contribution_cents: z.number().int().min(0).optional(),
 });
 
 export type RequestCodeInput = z.infer<typeof requestCodeSchema>;

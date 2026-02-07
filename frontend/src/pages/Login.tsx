@@ -10,6 +10,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
     if (normalizedEmail.endsWith('@aston.sk')) {
       const localPart = normalizedEmail.split('@')[0];
       if (localPart.includes('.')) {
-        setError('Prosím, použite krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)');
+        setError('Prosím, použi krátku emailovú adresu v tvare mpriezvisko@aston.sk (bez bodky)');
         return;
       }
     }
@@ -48,7 +49,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
     setLoading(true);
 
     try {
-      await verifyCode(email, code);
+      await verifyCode(email, code, name || undefined);
       onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Neplatný kód');
@@ -65,8 +66,8 @@ export const Login = ({ onSuccess }: LoginProps) => {
             <h1 className="text-3xl font-bold text-gray-900">Aston Bufet 2.0</h1>
             <p className="text-gray-500 mt-2">
               {step === 'email'
-                ? 'Prihláste sa pomocou firemného emailu'
-                : 'Zadajte kód z emailu'}
+                ? 'Prihlás sa pomocou firemného emailu'
+                : 'Zadaj kód z emailu'}
             </p>
           </div>
 
@@ -108,6 +109,26 @@ export const Login = ({ onSuccess }: LoginProps) => {
             <form onSubmit={handleVerifyCode}>
               <div className="mb-4">
                 <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Meno (voliteľné)
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  className="input"
+                  placeholder="Vaše meno"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Použije sa v emailových pripomienkach
+                </p>
+              </div>
+              <div className="mb-4">
+                <label
                   htmlFor="code"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
@@ -121,7 +142,6 @@ export const Login = ({ onSuccess }: LoginProps) => {
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   required
-                  autoFocus
                   maxLength={6}
                   inputMode="numeric"
                 />
@@ -142,6 +162,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
                 onClick={() => {
                   setStep('email');
                   setCode('');
+                  setName('');
                   setError(null);
                 }}
               >

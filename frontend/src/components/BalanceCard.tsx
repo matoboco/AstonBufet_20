@@ -50,7 +50,7 @@ export const BalanceCard = ({ balance, loading, error }: BalanceCardProps) => {
       </p>
       {isNegative && (
         <p className="text-xs text-red-400 mt-1">
-          Prosím, vyrovnajte svoj dlh
+          Prosím, vyrovnaj si dlh
         </p>
       )}
     </div>

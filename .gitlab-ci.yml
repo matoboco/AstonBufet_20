@@ -1,0 +1,36 @@
+stages:
+  - build
+
+variables:
+  REGISTRY: repo.astondev.sk
+  PROJECT: aston/aston-bufet-20
+
+build-frontend:
+  stage: build
+  script:
+    - |
+      cd frontend
+      version=$(docker run --rm -w /app -v $PWD:/app node:20-alpine sh -c "node -p \"require('./package.json').version\"")
+      echo "Frontend version: $version"
+      cd ..
+
+      docker build -t $REGISTRY/$PROJECT/aston-bufet-fe:$version -t $REGISTRY/$PROJECT/aston-bufet-fe:latest ./frontend
+      docker push $REGISTRY/$PROJECT/aston-bufet-fe:$version
+      docker push $REGISTRY/$PROJECT/aston-bufet-fe:latest
+  tags:
+    - build53
+
+build-backend:
+  stage: build
+  script:
+    - |
+      cd backend
+      version=$(docker run --rm -w /app -v $PWD:/app node:20-alpine sh -c "node -p \"require('./package.json').version\"")
+      echo "Backend version: $version"
+      cd ..
+
+      docker build -t $REGISTRY/$PROJECT/aston-bufet-be:$version -t $REGISTRY/$PROJECT/aston-bufet-be:latest ./backend
+      docker push $REGISTRY/$PROJECT/aston-bufet-be:$version
+      docker push $REGISTRY/$PROJECT/aston-bufet-be:latest
+  tags:
+    - build53
