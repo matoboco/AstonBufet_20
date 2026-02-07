@@ -97,7 +97,7 @@ export const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <header className="bg-white border-b border-gray-200 p-4 pt-safe">
-        <h1 className="text-xl font-bold">Profil</h1>
+        <h1 className="text-xl font-bold text-gray-900">Profil</h1>
       </header>
 
       <main className="p-4 space-y-6">

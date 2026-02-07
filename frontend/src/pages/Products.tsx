@@ -119,6 +119,7 @@ export const Products = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 p-4 pt-safe sticky top-0 z-10">
+        <h1 className="text-xl font-bold text-gray-900 mb-3">Produkty</h1>
         <div className="flex items-center gap-3">
           <div className="flex-1 relative">
             <input

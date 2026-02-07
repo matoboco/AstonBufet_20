@@ -35,8 +35,8 @@ export const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <header className="bg-primary-500 text-white p-4 pt-safe">
-        <h1 className="text-xl font-bold">Aston Bufet 2.0</h1>
+      <header className="bg-white border-b border-gray-200 p-4 pt-safe">
+        <h1 className="text-xl font-bold text-gray-900">Domov</h1>
       </header>
 
       {/* Content */}
