@@ -22,8 +22,8 @@ const checkForUpdates = async (): Promise<{ hasUpdate: boolean; serverVersion?: 
 export const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [name, setName] = useState(user?.name || '');
+  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<AccountEntry[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -49,17 +49,21 @@ export const Profile = () => {
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    setSaved(false);
 
     try {
       await updateProfile(name);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      setEditing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Nepodarilo sa uložiť');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCancelEdit = () => {
+    setName(user?.name || '');
+    setError(null);
+    setEditing(false);
   };
 
   const handleUpdate = useCallback(async () => {
@@ -98,55 +102,86 @@ export const Profile = () => {
 
       <main className="p-4 space-y-6">
         <div className="card">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Osobné údaje</h2>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="text"
-              className="input bg-gray-100"
-              value={user?.email || ''}
-              disabled
-            />
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Osobné údaje</h2>
+            {!editing && (
+              <button
+                onClick={() => setEditing(true)}
+                className="text-primary-600 text-sm font-medium"
+              >
+                Upraviť
+              </button>
+            )}
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Meno
-            </label>
-            <input
-              type="text"
-              className="input"
-              placeholder="Tvoje meno"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Použije sa v emailových pripomienkach
-            </p>
-          </div>
+          {editing ? (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  className="input bg-gray-100"
+                  value={user?.email || ''}
+                  disabled
+                />
+              </div>
 
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">
-              {error}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Meno
+                </label>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Tvoje meno"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoFocus
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Použije sa v emailových pripomienkach
+                </p>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                  className="btn btn-secondary flex-1"
+                >
+                  Zrušiť
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={saving}
+                  className="btn btn-primary flex-1"
+                >
+                  {saving ? 'Ukladám...' : 'Uložiť'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Email</span>
+                <span className="text-sm font-medium text-gray-900">{user?.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Meno</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {user?.name || <span className="text-gray-400 italic">nezadané</span>}
+                </span>
+              </div>
             </div>
           )}
-
-          {saved && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-lg mb-4 text-sm">
-              Meno bolo uložené
-            </div>
-          )}
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="btn btn-primary w-full"
-          >
-            {saving ? 'Ukladám...' : 'Uložiť'}
-          </button>
         </div>
 
         <div className="card">
