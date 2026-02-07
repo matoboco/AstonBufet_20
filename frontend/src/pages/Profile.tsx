@@ -6,7 +6,8 @@ import { Logo } from '../components/Logo';
 
 const checkForUpdates = async (): Promise<{ hasUpdate: boolean; serverVersion?: string }> => {
   try {
-    const response = await fetch(`/version.json?t=${Date.now()}`);
+    const basePath = import.meta.env.BASE_URL || '/';
+    const response = await fetch(`${basePath}version.json?t=${Date.now()}`);
     if (response.ok) {
       const data = await response.json();
       const serverBuildTime = data.buildTime;
