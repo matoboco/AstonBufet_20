@@ -12,7 +12,7 @@ import { api } from './utils/api';
 import { ShortageWarning } from './types';
 
 function App() {
-  const { loading, isAuthenticated, isOfficeAssistant, logout } = useAuth();
+  const { loading, isAuthenticated, isOfficeAssistant } = useAuth();
   const [shortageWarning, setShortageWarning] = useState<ShortageWarning | null>(null);
   const [acknowledging, setAcknowledging] = useState(false);
 
@@ -53,7 +53,7 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          <Route path="/" element={<Dashboard onLogout={logout} />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="/products" element={<Products />} />
           <Route path="/profile" element={<Profile />} />
           {isOfficeAssistant && (

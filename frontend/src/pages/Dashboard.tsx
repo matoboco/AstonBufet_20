@@ -5,11 +5,7 @@ import { AccountBalance, AccountEntry } from '../types';
 import { BalanceCard } from '../components/BalanceCard';
 import { TransactionList } from '../components/TransactionList';
 
-interface DashboardProps {
-  onLogout: () => void;
-}
-
-export const Dashboard = ({ onLogout }: DashboardProps) => {
+export const Dashboard = () => {
   const [balance, setBalance] = useState<AccountBalance | null>(null);
   const [transactions, setTransactions] = useState<AccountEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,27 +36,7 @@ export const Dashboard = ({ onLogout }: DashboardProps) => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-primary-500 text-white p-4 pt-safe">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Aston Bufet 2.0</h1>
-          <button
-            onClick={onLogout}
-            className="p-2 hover:bg-white/10 rounded-full"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-          </button>
-        </div>
+        <h1 className="text-xl font-bold">Aston Bufet 2.0</h1>
       </header>
 
       {/* Content */}
