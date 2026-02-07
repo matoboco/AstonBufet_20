@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth';
 import { api } from '../utils/api';
 import { AccountEntry } from '../types';
 import { Logo } from '../components/Logo';
+import { HelpTips } from '../components/HelpTips';
 
 const checkForUpdates = async (): Promise<{ hasUpdate: boolean; serverVersion?: string }> => {
   try {
@@ -99,7 +100,10 @@ export const Profile = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <header className="bg-white border-b border-gray-200 p-4 pt-safe">
-        <Logo className="h-7" />
+        <div className="flex items-center justify-between">
+          <Logo className="h-7" />
+          <HelpTips />
+        </div>
       </header>
 
       <main className="p-4 space-y-6">

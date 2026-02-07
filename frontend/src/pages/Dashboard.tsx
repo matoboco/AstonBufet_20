@@ -5,6 +5,7 @@ import { AccountBalance, AccountEntry } from '../types';
 import { BalanceCard } from '../components/BalanceCard';
 import { TransactionList } from '../components/TransactionList';
 import { Logo } from '../components/Logo';
+import { HelpTips } from '../components/HelpTips';
 
 export const Dashboard = () => {
   const [balance, setBalance] = useState<AccountBalance | null>(null);
@@ -37,7 +38,10 @@ export const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 p-4 pt-safe">
-        <Logo className="h-7" />
+        <div className="flex items-center justify-between">
+          <Logo className="h-7" />
+          <HelpTips />
+        </div>
       </header>
 
       {/* Content */}

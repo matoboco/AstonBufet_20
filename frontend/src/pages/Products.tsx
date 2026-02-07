@@ -6,6 +6,7 @@ import { ProductCard } from '../components/ProductCard';
 import { PurchaseModal } from '../components/PurchaseModal';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 import { Logo } from '../components/Logo';
+import { HelpTips } from '../components/HelpTips';
 
 export const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -120,7 +121,10 @@ export const Products = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 p-4 pt-safe sticky top-0 z-10">
-        <Logo className="h-7 mb-3" />
+        <div className="flex items-center justify-between mb-3">
+          <Logo className="h-7" />
+          <HelpTips />
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex-1 relative">
             <input
