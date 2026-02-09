@@ -8,6 +8,32 @@ import { User, LoginCode, JWTPayload, AuthenticatedRequest } from '../types';
 const router = Router();
 
 /**
+ * Get allowed email domains from ALLOWED_EMAIL_DOMAINS env variable
+ * If not set or empty, all domains are allowed
+ */
+const getAllowedDomains = (): string[] => {
+  const domainsEnv = process.env.ALLOWED_EMAIL_DOMAINS || '';
+  return domainsEnv
+    .split(',')
+    .map((d) => d.trim().toLowerCase())
+    .filter((d) => d.length > 0);
+};
+
+/**
+ * Check if email domain is allowed
+ * Returns true if ALLOWED_EMAIL_DOMAINS is not set (all domains allowed)
+ * or if the email domain is in the allowed list
+ */
+const isEmailDomainAllowed = (email: string): boolean => {
+  const allowedDomains = getAllowedDomains();
+  if (allowedDomains.length === 0) {
+    return true; // No restriction
+  }
+  const emailDomain = email.split('@')[1]?.toLowerCase();
+  return allowedDomains.includes(emailDomain);
+};
+
+/**
  * Check if email should have office_assistant role based on OFFICE_ASSISTANT_EMAILS env variable
  * Supports suffix matching: if "assistant@aston.sk" is defined, then "mbocko+assistant@aston.sk" also matches
  */
@@ -40,6 +66,15 @@ router.post('/request-code', async (req: Request, res: Response): Promise<void> 
 
     // Normalize email to lowercase
     const email = validation.data.email.trim().toLowerCase();
+
+    // Check if email domain is allowed
+    if (!isEmailDomainAllowed(email)) {
+      const allowedDomains = getAllowedDomains();
+      res.status(400).json({
+        error: `Povolené sú len emaily z domén: ${allowedDomains.join(', ')}`
+      });
+      return;
+    }
 
     // Validate @aston.sk emails - must use short format without dots
     if (email.endsWith('@aston.sk')) {
