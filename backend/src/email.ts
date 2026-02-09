@@ -69,6 +69,133 @@ export const sendOTPEmail = async (email: string, code: string): Promise<void> =
   }
 };
 
+export interface DepositEmailData {
+  email: string;
+  name?: string | null;
+  totalPaidCents: number;
+  depositedCents: number;
+  contributionCents: number;
+  previousBalanceCents: number;
+  newBalanceCents: number;
+}
+
+export const sendDepositEmail = async (data: DepositEmailData): Promise<void> => {
+  const {
+    email,
+    name,
+    totalPaidCents,
+    depositedCents,
+    contributionCents,
+    previousBalanceCents,
+    newBalanceCents,
+  } = data;
+
+  const greeting = name ? `Ahoj ${name}` : 'Ahoj';
+  const totalPaid = (totalPaidCents / 100).toFixed(2);
+  const deposited = (depositedCents / 100).toFixed(2);
+  const contribution = (contributionCents / 100).toFixed(2);
+  const previousBalance = (previousBalanceCents / 100).toFixed(2);
+  const newBalance = (newBalanceCents / 100).toFixed(2);
+
+  const subject = 'Aston Bufet 2.0 - Potvrdenie vkladu';
+
+  // Build text content
+  let textLines = [
+    `${greeting},`,
+    '',
+    'Na tvoj účet v bufete bol práve zaznamenaný vklad.',
+    '',
+    `Zaplatená suma: ${totalPaid} €`,
+  ];
+
+  if (contributionCents > 0) {
+    textLines.push(`  - Na účet: ${deposited} €`);
+    textLines.push(`  - Príspevok na manko: ${contribution} €`);
+  }
+
+  textLines.push('');
+  textLines.push(`Predchádzajúci zostatok: ${previousBalance} €`);
+  textLines.push(`Nový zostatok: ${newBalance} €`);
+
+  if (newBalanceCents > 0) {
+    textLines.push('');
+    textLines.push(`Máš kredit ${newBalance} € na ďalšie nákupy.`);
+  }
+
+  textLines.push('');
+  textLines.push('Ďakujeme,');
+  textLines.push('Aston Bufet 2.0');
+
+  const text = textLines.join('\n');
+
+  // Build HTML content
+  let detailsHtml = `<p><strong>Zaplatená suma:</strong> ${totalPaid} €</p>`;
+
+  if (contributionCents > 0) {
+    detailsHtml += `
+      <ul style="margin: 8px 0; padding-left: 20px;">
+        <li>Na účet: ${deposited} €</li>
+        <li>Príspevok na manko: ${contribution} €</li>
+      </ul>
+    `;
+  }
+
+  const balanceColor = newBalanceCents >= 0 ? '#10b981' : '#ef4444';
+  const creditNote = newBalanceCents > 0
+    ? `<p style="color: #10b981; font-weight: 500;">Máš kredit ${newBalance} € na ďalšie nákupy.</p>`
+    : '';
+
+  const html = `
+    <h2>Aston Bufet 2.0 - Potvrdenie vkladu</h2>
+    <p>${greeting},</p>
+    <p>Na tvoj účet v bufete bol práve zaznamenaný vklad.</p>
+
+    ${detailsHtml}
+
+    <table style="margin: 16px 0; border-collapse: collapse;">
+      <tr>
+        <td style="padding: 4px 16px 4px 0; color: #666;">Predchádzajúci zostatok:</td>
+        <td style="padding: 4px 0; font-weight: 500;">${previousBalance} €</td>
+      </tr>
+      <tr>
+        <td style="padding: 4px 16px 4px 0; color: #666;">Nový zostatok:</td>
+        <td style="padding: 4px 0; font-weight: bold; font-size: 18px; color: ${balanceColor};">${newBalance} €</td>
+      </tr>
+    </table>
+
+    ${creditNote}
+
+    <p>Ďakujeme,<br/>Aston Bufet 2.0</p>
+  `;
+
+  if (isConsoleMode) {
+    console.log('=== DEPOSIT EMAIL (Console Mode) ===');
+    console.log(`To: ${email}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Total paid: ${totalPaid} €`);
+    console.log(`Deposited: ${deposited} €`);
+    console.log(`Contribution: ${contribution} €`);
+    console.log(`Previous balance: ${previousBalance} €`);
+    console.log(`New balance: ${newBalance} €`);
+    console.log('====================================');
+    return;
+  }
+
+  try {
+    await transporter!.sendMail({
+      from: process.env.SMTP_FROM,
+      to: email,
+      subject,
+      text,
+      html,
+    });
+    console.log(`Deposit email sent to ${email}`);
+  } catch (error) {
+    console.error('Failed to send deposit email:', error);
+    // Don't throw - deposit was successful, email is just notification
+  }
+};
+
 export const sendReminderEmail = async (
   email: string,
   balanceEur: number | string,

@@ -3,6 +3,7 @@ import { query, queryOne } from '../db';
 import { authenticateToken, requireRole, requireSelfOrRole } from '../middleware';
 import { depositSchema } from '../validation';
 import { AuthenticatedRequest, AccountBalance, AccountHistoryEntry, ShortageAcknowledgement, ShortageSummary } from '../types';
+import { sendDepositEmail } from '../email';
 
 const router = Router();
 
@@ -92,9 +93,9 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
 
     const { user_id, amount_cents, note, contribution_cents } = validation.data;
 
-    // Verify user exists
-    const user = await queryOne<{ id: string; email: string }>(
-      'SELECT id, email FROM users WHERE id = $1',
+    // Verify user exists and get their info
+    const user = await queryOne<{ id: string; email: string; name: string | null }>(
+      'SELECT id, email, name FROM users WHERE id = $1',
       [user_id]
     );
 
@@ -102,6 +103,13 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
       res.status(404).json({ error: 'User not found' });
       return;
     }
+
+    // Get previous balance before deposit
+    const previousBalance = await queryOne<{ balance_eur: number }>(
+      'SELECT balance_eur FROM account_balances WHERE id = $1',
+      [user_id]
+    );
+    const previousBalanceCents = Math.round((Number(previousBalance?.balance_eur) || 0) * 100);
 
     // Calculate actual deposit amount (minus contribution)
     const actualDepositCents = contribution_cents ? amount_cents - contribution_cents : amount_cents;
@@ -128,6 +136,18 @@ router.post('/deposit', authenticateToken, requireRole('office_assistant'), asyn
       'SELECT * FROM account_balances WHERE id = $1',
       [user_id]
     );
+    const newBalanceCents = Math.round((Number(balance?.balance_eur) || 0) * 100);
+
+    // Send email notification (async, don't wait)
+    sendDepositEmail({
+      email: user.email,
+      name: user.name,
+      totalPaidCents: amount_cents,
+      depositedCents: actualDepositCents,
+      contributionCents: contribution_cents || 0,
+      previousBalanceCents,
+      newBalanceCents,
+    }).catch(err => console.error('Failed to send deposit email:', err));
 
     res.json({
       success: true,
