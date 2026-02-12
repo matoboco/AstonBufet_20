@@ -847,7 +847,7 @@ export const OfficeDashboard = () => {
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Cena (€/ks)
@@ -867,7 +867,7 @@ export const OfficeDashboard = () => {
                   </label>
                   <input
                     type="datetime-local"
-                    className="input"
+                    className="input w-full"
                     value={editSaleExpires}
                     onChange={(e) => setEditSaleExpires(e.target.value)}
                   />
