@@ -1,8 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { api, getToken, setToken, removeToken, getUser, setUser } from '../utils/api';
 import { User, AuthResponse } from '../types';
 
-export const useAuth = () => {
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  isAuthenticated: boolean;
+  isOfficeAssistant: boolean;
+  requestCode: (email: string) => Promise<void>;
+  verifyCode: (email: string, code: string, name?: string) => Promise<User>;
+  updateProfile: (name: string) => Promise<User>;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUserState] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -59,14 +72,26 @@ export const useAuth = () => {
   const isAuthenticated = !!user;
   const isOfficeAssistant = user?.role === 'office_assistant';
 
-  return {
-    user,
-    loading,
-    isAuthenticated,
-    isOfficeAssistant,
-    requestCode,
-    verifyCode,
-    updateProfile,
-    logout,
-  };
+  return (
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      isAuthenticated,
+      isOfficeAssistant,
+      requestCode,
+      verifyCode,
+      updateProfile,
+      logout,
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

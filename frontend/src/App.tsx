@@ -11,6 +11,8 @@ import { Profile } from './pages/Profile';
 import { api } from './utils/api';
 import { ShortageWarning } from './types';
 
+const basename = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
+
 function App() {
   const { loading, isAuthenticated, isOfficeAssistant } = useAuth();
   const [shortageWarning, setShortageWarning] = useState<ShortageWarning | null>(null);
@@ -46,10 +48,8 @@ function App() {
   }
 
   if (!isAuthenticated) {
-    return <Login onSuccess={() => window.location.reload()} />;
+    return <Login />;
   }
-
-  const basename = import.meta.env.BASE_URL?.replace(/\/$/, '') || '';
 
   return (
     <BrowserRouter basename={basename}>

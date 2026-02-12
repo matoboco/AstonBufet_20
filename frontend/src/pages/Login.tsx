@@ -1,11 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
-interface LoginProps {
-  onSuccess: () => void;
-}
-
-export const Login = ({ onSuccess }: LoginProps) => {
+export const Login = () => {
   const { requestCode, verifyCode } = useAuth();
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
@@ -50,7 +46,6 @@ export const Login = ({ onSuccess }: LoginProps) => {
 
     try {
       await verifyCode(email, code, name || undefined);
-      onSuccess();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Neplatný kód');
     } finally {
