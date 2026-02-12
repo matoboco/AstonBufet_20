@@ -17,6 +17,7 @@ Bežný zamestnanec môže:
 - **Skenovať čiarové kódy** - rýchly nákup pomocou skenovania EAN kódu produktu
 - **Sledovať zostatok** - aktuálny stav osobného účtu (kladný = kredit, záporný = dlh)
 - **História transakcií** - prehľad všetkých nákupov a vkladov
+- **Akciové produkty** - prehľad produktov v akcii priamo na domovskej obrazovke
 - **Upozornenia na manko** - pri zistení manka v sklade je zamestnanec upozornený s pripomienkou na evidovanie nákupov
 
 ### Office Assistant (office_assistant)
@@ -29,6 +30,7 @@ Správca bufetu má prístup k dashboardu s dvoma kartami:
 - **Inventúra** - zadanie skutočného stavu skladu s automatickým výpočtom manka/prebytku
 - **Odpis tovaru** - možnosť odpísať tovar (expirovaný, poškodený) bez evidencie ako manko
 - **Úprava názvov produktov**
+- **Akciové ceny** - nastavenie zľavnenej ceny na produkty blížiace sa k dobe spotreby s dátumom vypršania akcie
 
 #### Karta Dlžníci
 - Zoznam zamestnancov so záporným zostatkom
@@ -41,7 +43,7 @@ Správca bufetu má prístup k dashboardu s dvoma kartami:
 
 1. Zamestnanec otvorí aplikáciu a vyberie produkt (alebo naskenuje čiarový kód)
 2. Zvolí množstvo a potvrdí nákup
-3. Zobrazí sa skutočná cena podľa FIFO (ak sú rôzne nákupné ceny, zobrazí sa mix)
+3. Zobrazí sa skutočná cena podľa FIFO (ak sú rôzne nákupné ceny, zobrazí sa mix), alebo akciová cena ak je aktívna
 4. Suma sa automaticky odpočíta z jeho účtu
 5. Sklad sa aktualizuje (FIFO metóda)
 
@@ -85,6 +87,20 @@ Office assistant pravidelne kontroluje skutočný stav skladu:
 **Odpis tovaru:**
 - Ak je tovar poškodený alebo expirovaný, označí sa ako **odpis**
 - Odpisy sa nezapočítavajú do manka a negenerujú upozornenia
+
+### Akciové ceny
+
+Produkty blížiace sa k dobe spotreby môže office assistant predávať za zníženú cenu:
+
+1. Office assistant otvorí detail produktu v karte **Sklad**
+2. Zadá **akciové cenu** (€/ks) a **dátum platnosti akcie**
+3. Produkt sa zobrazí s vizuálnym označením "AKCIA" a preškrtnutou pôvodnou cenou
+4. Pri nákupe sa automaticky použije akciová cena namiesto pôvodnej FIFO ceny
+5. Po vypršaní dátumu sa akcia automaticky deaktivuje
+
+**Na domovskej obrazovke:**
+- Ak existujú akciové produkty, zobrazia sa v sekcii "Akciové produkty" namiesto posledných transakcií
+- Zamestnanec tak okamžite vidí, čo je práve v akcii
 
 ### Upozornenia na manko
 
