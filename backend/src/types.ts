@@ -14,6 +14,8 @@ export interface Product {
   name: string;
   ean: string;
   price_cents: number;
+  sale_price_cents: number | null;
+  sale_expires_at: Date | null;
   created_at: Date;
 }
 

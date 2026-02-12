@@ -56,7 +56,13 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
       return;
     }
 
-    // FIFO allocation
+    // Check for active sale price
+    const prod = product.rows[0];
+    const hasActiveSale = prod.sale_price_cents != null
+      && prod.sale_expires_at != null
+      && new Date(prod.sale_expires_at) > new Date();
+
+    // FIFO allocation (deduct stock regardless of pricing)
     let remainingQty = quantity;
     let totalCost = 0;
     const allocations: { batch_id: string; qty: number; price_cents: number }[] = [];
@@ -72,11 +78,12 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res: Respo
         [newQty, batch.id]
       );
 
-      totalCost += allocQty * batch.price_cents;
+      const unitPrice = hasActiveSale ? prod.sale_price_cents! : batch.price_cents;
+      totalCost += allocQty * unitPrice;
       allocations.push({
         batch_id: batch.id,
         qty: allocQty,
-        price_cents: batch.price_cents,
+        price_cents: unitPrice,
       });
 
       remainingQty -= allocQty;

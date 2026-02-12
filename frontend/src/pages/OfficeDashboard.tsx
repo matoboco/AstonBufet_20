@@ -3,6 +3,9 @@ import { api } from '../utils/api';
 import { AccountBalance, Product } from '../types';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 
+/** Parse EUR string accepting both comma and dot as decimal separator */
+const parseEur = (value: string): number => parseFloat(value.replace(',', '.')) || 0;
+
 interface ProductWithStock extends Product {
   stock_quantity: number;
 }
@@ -40,6 +43,8 @@ export const OfficeDashboard = () => {
   const [editProduct, setEditProduct] = useState<ProductWithStock | null>(null);
   const [editName, setEditName] = useState('');
   const [editEan, setEditEan] = useState('');
+  const [editSalePrice, setEditSalePrice] = useState('');
+  const [editSaleExpires, setEditSaleExpires] = useState('');
   const [showEditScanner, setShowEditScanner] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -112,12 +117,12 @@ export const OfficeDashboard = () => {
 
     setDepositing(true);
     try {
-      const contributionCents = depositContribution ? Math.round(parseFloat(depositContribution) * 100) : undefined;
+      const contributionCents = depositContribution ? Math.round(parseEur(depositContribution) * 100) : undefined;
       await api('/account/deposit', {
         method: 'POST',
         body: {
           user_id: depositModal.id,
-          amount_cents: Math.round(parseFloat(depositAmount) * 100),
+          amount_cents: Math.round(parseEur(depositAmount) * 100),
           note: depositNote || undefined,
           contribution_cents: contributionCents,
         },
@@ -165,7 +170,7 @@ export const OfficeDashboard = () => {
           ean: stockForm.ean,
           name: stockForm.name || undefined,
           quantity: parseInt(stockForm.quantity),
-          price_cents: Math.round(parseFloat(stockForm.price_cents) * 100),
+          price_cents: Math.round(parseEur(stockForm.price_cents) * 100),
         },
       });
       setMessage({ type: 'success', text: 'Sklad bol aktualizovaný' });
@@ -186,14 +191,24 @@ export const OfficeDashboard = () => {
     if (!editProduct) return;
     setSaving(true);
     try {
+      const salePriceCents = editSalePrice ? Math.round(parseEur(editSalePrice) * 100) : null;
+      const saleExpiresAt = editSaleExpires || null;
+
       await api(`/products/${editProduct.id}`, {
         method: 'PUT',
-        body: { name: editName, ean: editEan },
+        body: {
+          name: editName,
+          ean: editEan,
+          sale_price_cents: salePriceCents,
+          sale_expires_at: saleExpiresAt,
+        },
       });
       setMessage({ type: 'success', text: 'Produkt bol aktualizovaný' });
       setEditProduct(null);
       setEditName('');
       setEditEan('');
+      setEditSalePrice('');
+      setEditSaleExpires('');
       await fetchData(false);
     } catch (error) {
       setMessage({
@@ -456,19 +471,35 @@ export const OfficeDashboard = () => {
             ) : (
               <div className="space-y-2">
                 {filteredProducts.map((product) => (
-                  <div key={product.id} className="card">
+                  <div key={product.id} className={`card ${product.sale_price_cents != null ? 'ring-2 ring-red-400' : ''}`}>
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
-                        <p className="font-semibold">{product.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold">{product.name}</p>
+                          {product.sale_price_cents != null && (
+                            <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded">AKCIA</span>
+                          )}
+                        </div>
                         <p className="text-sm text-gray-500">{product.ean}</p>
                       </div>
                       <div className="text-right">
                         <p className={`font-bold ${Number(product.stock_quantity) > 0 ? 'text-primary-600' : 'text-red-500'}`}>
                           {product.stock_quantity} ks
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {(Number(product.price_cents) / 100).toFixed(2)} €
-                        </p>
+                        {product.sale_price_cents != null ? (
+                          <div>
+                            <p className="text-sm font-bold text-red-600">
+                              {(Number(product.sale_price_cents) / 100).toFixed(2)} €
+                            </p>
+                            <p className="text-xs text-gray-400 line-through">
+                              {(Number(product.price_cents) / 100).toFixed(2)} €
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            {(Number(product.price_cents) / 100).toFixed(2)} €
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex gap-2 mt-3">
@@ -478,6 +509,8 @@ export const OfficeDashboard = () => {
                           setEditProduct(product);
                           setEditName(product.name);
                           setEditEan(product.ean);
+                          setEditSalePrice(product.sale_price_cents ? (Number(product.sale_price_cents) / 100).toString() : '');
+                          setEditSaleExpires(product.sale_expires_at ? product.sale_expires_at.slice(0, 16) : '');
                         }}
                       >
                         Upraviť
@@ -511,9 +544,9 @@ export const OfficeDashboard = () => {
       {/* Deposit Modal */}
       {depositModal && (() => {
         const debtAmount = Math.abs(Math.min(0, Number(depositModal.balance_eur)));
-        const depositValue = parseFloat(depositAmount) || 0;
+        const depositValue = parseEur(depositAmount);
         const excess = Math.max(0, depositValue - debtAmount);
-        const contributionValue = parseFloat(depositContribution) || 0;
+        const contributionValue = parseEur(depositContribution);
         const maxContribution = excess;
 
         return (
@@ -533,16 +566,15 @@ export const OfficeDashboard = () => {
                   Suma (€)
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className="input"
-                  placeholder="0.00"
+                  placeholder="0,00"
                   value={depositAmount}
                   onChange={(e) => {
                     setDepositAmount(e.target.value);
                     setDepositContribution('');
                   }}
-                  step="0.01"
-                  min="0"
                 />
               </div>
 
@@ -552,19 +584,17 @@ export const OfficeDashboard = () => {
                     Príspevok na manko (max {excess.toFixed(2)} €)
                   </label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     className="input"
-                    placeholder="0.00"
+                    placeholder="0,00"
                     value={depositContribution}
                     onChange={(e) => {
-                      const val = parseFloat(e.target.value) || 0;
+                      const val = parseEur(e.target.value);
                       if (val <= maxContribution) {
                         setDepositContribution(e.target.value);
                       }
                     }}
-                    step="0.01"
-                    min="0"
-                    max={maxContribution}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Prebytok {excess.toFixed(2)} € môže ísť na vyrovnanie manka
@@ -710,15 +740,14 @@ export const OfficeDashboard = () => {
                   Cena (€/ks)
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className="input"
-                  placeholder="1.20"
+                  placeholder="1,20"
                   value={stockForm.price_cents}
                   onChange={(e) =>
                     setStockForm((f) => ({ ...f, price_cents: e.target.value }))
                   }
-                  step="0.01"
-                  min="0"
                 />
               </div>
             </div>
@@ -789,7 +818,7 @@ export const OfficeDashboard = () => {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Názov produktu
               </label>
@@ -801,6 +830,51 @@ export const OfficeDashboard = () => {
               />
             </div>
 
+            {/* Sale price section */}
+            <div className="border-t border-gray-200 pt-4 mb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-red-600">Akciová cena</h3>
+                {(editSalePrice || editSaleExpires) && (
+                  <button
+                    type="button"
+                    className="text-xs text-red-500 underline"
+                    onClick={() => {
+                      setEditSalePrice('');
+                      setEditSaleExpires('');
+                    }}
+                  >
+                    Zrušiť akciu
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cena (€/ks)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    className="input"
+                    placeholder="0,30"
+                    value={editSalePrice}
+                    onChange={(e) => setEditSalePrice(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Platná do
+                  </label>
+                  <input
+                    type="datetime-local"
+                    className="input"
+                    value={editSaleExpires}
+                    onChange={(e) => setEditSaleExpires(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <button
                 className="btn btn-secondary flex-1"
@@ -808,6 +882,8 @@ export const OfficeDashboard = () => {
                   setEditProduct(null);
                   setEditName('');
                   setEditEan('');
+                  setEditSalePrice('');
+                  setEditSaleExpires('');
                 }}
                 disabled={saving}
               >
