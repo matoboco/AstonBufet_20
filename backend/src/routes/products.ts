@@ -145,13 +145,19 @@ router.put('/:id', authenticateToken, requireRole('office_assistant'), async (re
       }
     }
 
+    // If sale_expires_at is a date string (YYYY-MM-DD), set to end of day
+    let saleExpiresValue: string | null = sale_expires_at ?? null;
+    if (saleExpiresValue && saleExpiresValue.length === 10) {
+      saleExpiresValue = `${saleExpiresValue}T23:59:59`;
+    }
+
     const product = await queryOne<Product>(
       `UPDATE products
        SET name = $1, ean = COALESCE($2, ean),
            sale_price_cents = $4,
            sale_expires_at = $5
        WHERE id = $3 RETURNING *`,
-      [name.trim(), ean?.trim() || null, id, sale_price_cents ?? null, sale_expires_at ?? null]
+      [name.trim(), ean?.trim() || null, id, sale_price_cents ?? null, saleExpiresValue]
     );
 
     if (!product) {

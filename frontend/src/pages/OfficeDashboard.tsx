@@ -510,7 +510,7 @@ export const OfficeDashboard = () => {
                           setEditName(product.name);
                           setEditEan(product.ean);
                           setEditSalePrice(product.sale_price_cents ? (Number(product.sale_price_cents) / 100).toString() : '');
-                          setEditSaleExpires(product.sale_expires_at ? product.sale_expires_at.slice(0, 16) : '');
+                          setEditSaleExpires(product.sale_expires_at ? product.sale_expires_at.slice(0, 10) : '');
                         }}
                       >
                         Upraviť
@@ -782,8 +782,8 @@ export const OfficeDashboard = () => {
 
       {/* Edit Product Modal */}
       {editProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">Upraviť produkt</h2>
 
             <div className="mb-4">
@@ -866,7 +866,7 @@ export const OfficeDashboard = () => {
                     Platná do
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     className="input w-full"
                     value={editSaleExpires}
                     onChange={(e) => setEditSaleExpires(e.target.value)}
