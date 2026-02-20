@@ -19,7 +19,6 @@ ALLOWED_EMAIL_DOMAINS = ""
 
 # Secrets (set via `wrangler secret put`):
 # JWT_SECRET
-# RESEND_API_KEY
 # SMTP_HOST
 # SMTP_PORT
 # SMTP_USER

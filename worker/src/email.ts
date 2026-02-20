@@ -1,3 +1,4 @@
+import { connect } from 'cloudflare:sockets';
 import type { Env } from './types';
 
 export interface DepositEmailData {
@@ -9,6 +10,210 @@ export interface DepositEmailData {
   previousBalanceCents: number;
   newBalanceCents: number;
 }
+
+// --- Minimal SMTP client using Cloudflare Workers TCP sockets ---
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+async function readResponse(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<{ code: number; text: string }> {
+  let full = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    full += decoder.decode(value, { stream: true });
+    // SMTP multi-line responses have '-' after code, last line has ' '
+    const lines = full.split('\r\n').filter(l => l.length > 0);
+    const lastLine = lines[lines.length - 1];
+    if (lastLine && lastLine.length >= 4 && lastLine[3] === ' ') {
+      break;
+    }
+  }
+  const code = parseInt(full.substring(0, 3), 10);
+  return { code, text: full.trim() };
+}
+
+async function sendCommand(
+  writer: WritableStreamDefaultWriter<Uint8Array>,
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  command: string
+): Promise<{ code: number; text: string }> {
+  await writer.write(encoder.encode(command + '\r\n'));
+  return readResponse(reader);
+}
+
+function buildMimeMessage(from: string, to: string, subject: string, text: string, html: string): string {
+  const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+
+  const headers = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: =?UTF-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    `Date: ${new Date().toUTCString()}`,
+    `Message-ID: <${crypto.randomUUID()}@aston.sk>`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    btoa(unescape(encodeURIComponent(text))),
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    btoa(unescape(encodeURIComponent(html))),
+    '',
+    `--${boundary}--`,
+    '',
+  ];
+
+  return headers.join('\r\n');
+}
+
+/**
+ * Send SMTP commands over a given writer/reader pair.
+ * Handles EHLO, optional AUTH LOGIN, MAIL FROM, RCPT TO, DATA, QUIT.
+ */
+async function smtpSession(
+  writer: WritableStreamDefaultWriter<Uint8Array>,
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  from: string,
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+  user?: string,
+  pass?: string,
+): Promise<void> {
+  // EHLO
+  let resp = await sendCommand(writer, reader, 'EHLO worker.cloudflare.com');
+  if (resp.code !== 250) throw new Error(`EHLO failed: ${resp.text}`);
+
+  // AUTH LOGIN if credentials provided
+  if (user && pass) {
+    resp = await sendCommand(writer, reader, 'AUTH LOGIN');
+    if (resp.code !== 334) throw new Error(`AUTH LOGIN failed: ${resp.text}`);
+    resp = await sendCommand(writer, reader, btoa(user));
+    if (resp.code !== 334) throw new Error(`AUTH username failed: ${resp.text}`);
+    resp = await sendCommand(writer, reader, btoa(pass));
+    if (resp.code !== 235) throw new Error(`AUTH password failed: ${resp.text}`);
+  }
+
+  // MAIL FROM
+  resp = await sendCommand(writer, reader, `MAIL FROM:<${from}>`);
+  if (resp.code !== 250) throw new Error(`MAIL FROM failed: ${resp.text}`);
+
+  // RCPT TO
+  resp = await sendCommand(writer, reader, `RCPT TO:<${to}>`);
+  if (resp.code !== 250) throw new Error(`RCPT TO failed: ${resp.text}`);
+
+  // DATA
+  resp = await sendCommand(writer, reader, 'DATA');
+  if (resp.code !== 354) throw new Error(`DATA failed: ${resp.text}`);
+
+  // Send MIME message, terminated with <CR><LF>.<CR><LF>
+  const message = buildMimeMessage(from, to, subject, text, html);
+  await writer.write(encoder.encode(message + '\r\n.\r\n'));
+  resp = await readResponse(reader);
+  if (resp.code !== 250) throw new Error(`Message send failed: ${resp.text}`);
+
+  // QUIT
+  await sendCommand(writer, reader, 'QUIT');
+}
+
+async function sendViaSMTP(
+  env: Env,
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+): Promise<void> {
+  const host = env.SMTP_HOST!;
+  const port = parseInt(env.SMTP_PORT || '587', 10);
+  const user = env.SMTP_USER;
+  const pass = env.SMTP_PASS;
+  const from = env.SMTP_FROM || 'noreply@aston.sk';
+  const secure = port === 465;
+
+  // Connect via TCP socket (implicit TLS for port 465)
+  const socket = connect({
+    hostname: host,
+    port,
+  }, {
+    secureTransport: secure ? 'on' : 'off',
+    allowHalfOpen: false,
+  });
+
+  const writer = socket.writable.getWriter();
+  const reader = socket.readable.getReader();
+
+  try {
+    // Read server greeting
+    const greeting = await readResponse(reader);
+    if (greeting.code !== 220) throw new Error(`SMTP greeting failed: ${greeting.text}`);
+
+    // Check if STARTTLS is needed (port 587)
+    if (!secure) {
+      // EHLO first to discover capabilities
+      let resp = await sendCommand(writer, reader, 'EHLO worker.cloudflare.com');
+      if (resp.code !== 250) throw new Error(`EHLO failed: ${resp.text}`);
+
+      if (resp.text.includes('STARTTLS')) {
+        resp = await sendCommand(writer, reader, 'STARTTLS');
+        if (resp.code !== 220) throw new Error(`STARTTLS failed: ${resp.text}`);
+
+        // Upgrade to TLS and use new streams
+        const tlsSocket = socket.startTls();
+        const tlsWriter = tlsSocket.writable.getWriter();
+        const tlsReader = tlsSocket.readable.getReader();
+
+        try {
+          await smtpSession(tlsWriter, tlsReader, from, to, subject, text, html, user, pass);
+        } finally {
+          tlsWriter.releaseLock();
+          tlsReader.releaseLock();
+        }
+        return;
+      }
+
+      // No STARTTLS available on plain connection — proceed without TLS
+      // We already did EHLO, so go straight to AUTH + send
+      if (user && pass) {
+        resp = await sendCommand(writer, reader, 'AUTH LOGIN');
+        if (resp.code !== 334) throw new Error(`AUTH LOGIN failed: ${resp.text}`);
+        resp = await sendCommand(writer, reader, btoa(user));
+        if (resp.code !== 334) throw new Error(`AUTH username failed: ${resp.text}`);
+        resp = await sendCommand(writer, reader, btoa(pass));
+        if (resp.code !== 235) throw new Error(`AUTH password failed: ${resp.text}`);
+      }
+
+      resp = await sendCommand(writer, reader, `MAIL FROM:<${from}>`);
+      if (resp.code !== 250) throw new Error(`MAIL FROM failed: ${resp.text}`);
+      resp = await sendCommand(writer, reader, `RCPT TO:<${to}>`);
+      if (resp.code !== 250) throw new Error(`RCPT TO failed: ${resp.text}`);
+      resp = await sendCommand(writer, reader, 'DATA');
+      if (resp.code !== 354) throw new Error(`DATA failed: ${resp.text}`);
+
+      const message = buildMimeMessage(from, to, subject, text, html);
+      await writer.write(encoder.encode(message + '\r\n.\r\n'));
+      resp = await readResponse(reader);
+      if (resp.code !== 250) throw new Error(`Message send failed: ${resp.text}`);
+      await sendCommand(writer, reader, 'QUIT');
+    } else {
+      // Implicit TLS (port 465) — already encrypted
+      await smtpSession(writer, reader, from, to, subject, text, html, user, pass);
+    }
+  } finally {
+    writer.releaseLock();
+    reader.releaseLock();
+    socket.close();
+  }
+}
+
+// --- Main sendEmail dispatcher ---
 
 async function sendEmail(
   env: Env,
@@ -26,57 +231,12 @@ async function sendEmail(
     return;
   }
 
-  // Use Resend API if key is available
-  if (env.RESEND_API_KEY) {
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: env.SMTP_FROM || 'noreply@aston.sk',
-        to: [to],
-        subject,
-        text,
-        html,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Resend API error: ${response.status} ${err}`);
-    }
-    console.log(`Email sent to ${to} via Resend`);
-    return;
+  if (!env.SMTP_HOST) {
+    throw new Error('SMTP_HOST is not configured');
   }
 
-  // Fallback: generic SMTP relay via HTTP (e.g., MailChannels on CF Workers)
-  if (env.SMTP_HOST) {
-    // MailChannels or similar HTTP-based email relay
-    const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email: to }] }],
-        from: { email: env.SMTP_FROM || 'noreply@aston.sk' },
-        subject,
-        content: [
-          { type: 'text/plain', value: text },
-          { type: 'text/html', value: html },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`MailChannels error: ${response.status} ${err}`);
-    }
-    console.log(`Email sent to ${to} via MailChannels`);
-    return;
-  }
-
-  console.warn(`No email provider configured. Would send to ${to}: ${subject}`);
+  await sendViaSMTP(env, to, subject, text, html);
+  console.log(`SMTP email sent to ${to} via ${env.SMTP_HOST}:${env.SMTP_PORT || 587}`);
 }
 
 export async function sendOTPEmail(env: Env, email: string, code: string): Promise<void> {

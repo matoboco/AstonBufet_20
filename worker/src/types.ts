@@ -8,7 +8,6 @@ export interface Env {
   SMTP_USER?: string;
   SMTP_PASS?: string;
   SMTP_FROM?: string;
-  RESEND_API_KEY?: string;
   OFFICE_ASSISTANT_EMAILS: string;
   ALLOWED_EMAIL_DOMAINS: string;
 }
