@@ -7,7 +7,7 @@ interface PullToRefreshOptions {
 }
 
 interface PullToRefreshResult {
-  containerRef: React.RefObject<HTMLDivElement | null>;
+  containerRef: React.RefObject<HTMLDivElement>;
   refreshing: boolean;
   pullDistance: number;
   isPulling: boolean;
@@ -18,7 +18,7 @@ export const usePullToRefresh = ({
   threshold = 80,
   maxPull = 120,
 }: PullToRefreshOptions): PullToRefreshResult => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPulling, setIsPulling] = useState(false);
