@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../utils/api';
 import { AccountBalance, AccountEntry, Product } from '../types';
@@ -6,6 +6,8 @@ import { BalanceCard } from '../components/BalanceCard';
 import { TransactionList } from '../components/TransactionList';
 import { Logo } from '../components/Logo';
 import { HelpTips } from '../components/HelpTips';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '../components/PullToRefreshIndicator';
 
 export const Dashboard = () => {
   const [balance, setBalance] = useState<AccountBalance | null>(null);
@@ -14,31 +16,40 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setError(false);
-        const [balanceData, historyData, saleData] = await Promise.all([
-          api<AccountBalance>('/account/my-balance'),
-          api<AccountEntry[]>('/account/my-history'),
-          api<Product[]>('/products/on-sale'),
-        ]);
-        setBalance(balanceData);
-        setTransactions(historyData);
-        setSaleProducts(saleData);
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchData = useCallback(async (showLoading = true) => {
+    try {
+      if (showLoading) setLoading(true);
+      setError(false);
+      const [balanceData, historyData, saleData] = await Promise.all([
+        api<AccountBalance>('/account/my-balance'),
+        api<AccountEntry[]>('/account/my-history'),
+        api<Product[]>('/products/on-sale'),
+      ]);
+      setBalance(balanceData);
+      setTransactions(historyData);
+      setSaleProducts(saleData);
+    } catch (err) {
+      console.error('Failed to fetch dashboard data:', err);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  const handlePullRefresh = useCallback(async () => {
+    await fetchData(false);
+  }, [fetchData]);
+
+  const { containerRef, refreshing, pullDistance } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 pb-20 overflow-auto">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 p-4 pt-safe">
         <div className="flex items-center justify-between">
@@ -46,6 +57,8 @@ export const Dashboard = () => {
           <HelpTips />
         </div>
       </header>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Content */}
       <main className="p-4 space-y-6">

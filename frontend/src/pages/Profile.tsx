@@ -4,6 +4,8 @@ import { api } from '../utils/api';
 import { AccountEntry } from '../types';
 import { Logo } from '../components/Logo';
 import { HelpTips } from '../components/HelpTips';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '../components/PullToRefreshIndicator';
 
 const checkForUpdates = async (): Promise<{ hasUpdate: boolean; serverVersion?: string }> => {
   try {
@@ -32,6 +34,14 @@ export const Profile = () => {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [hasUpdate, setHasUpdate] = useState(false);
   const [updating, setUpdating] = useState(false);
+
+  const handlePullRefresh = useCallback(async () => {
+    await fetchHistory();
+  }, []);
+
+  const { containerRef, refreshing: pullRefreshing, pullDistance } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+  });
 
   useEffect(() => {
     fetchHistory();
@@ -98,13 +108,15 @@ export const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 pb-20 overflow-auto">
       <header className="bg-white border-b border-gray-200 p-4 pt-safe">
         <div className="flex items-center justify-between">
           <Logo className="h-7" />
           <HelpTips />
         </div>
       </header>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={pullRefreshing} />
 
       <main className="p-4 space-y-6">
         <div className="card">

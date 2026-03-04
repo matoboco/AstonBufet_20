@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { api } from '../utils/api';
 import { AccountBalance, Product } from '../types';
 import { BarcodeScanner } from '../components/BarcodeScanner';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '../components/PullToRefreshIndicator';
 
 /** Parse EUR string accepting both comma and dot as decimal separator */
 const parseEur = (value: string): number => parseFloat(value.replace(',', '.')) || 0;
@@ -59,7 +61,7 @@ export const OfficeDashboard = () => {
   const [inventorySaving, setInventorySaving] = useState(false);
   const [isWriteOff, setIsWriteOff] = useState(false);
 
-  const fetchData = async (showLoading = true) => {
+  const fetchData = useCallback(async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
       const [debtorsData, productsData] = await Promise.all([
@@ -73,11 +75,19 @@ export const OfficeDashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  const handlePullRefresh = useCallback(async () => {
+    await fetchData(false);
+  }, [fetchData]);
+
+  const { containerRef, refreshing, pullDistance } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+  });
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // Auto-dismiss error messages after 5 seconds
   useEffect(() => {
@@ -291,11 +301,13 @@ export const OfficeDashboard = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 pb-20 overflow-auto">
       {/* Header */}
       <header className="bg-primary-500 text-white p-4 pt-safe">
         <h1 className="text-xl font-bold">Správa bufetu</h1>
       </header>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
 
       {/* Message */}
       {message && (
