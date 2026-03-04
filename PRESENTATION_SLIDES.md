@@ -16,7 +16,7 @@
 
 - Manualny proces evidencie nakupov vo firemnom bufete je neefektivny
 - Neprehladne sledovanie zostatkov a dlhov zamestnancov
-- Chybajuca kontrola nad zasobami (mankovia, expiracne doby)
+- Chybajuca kontrola nad zasobami (manka, expiracne doby)
 - Casovo narocna administrativa pre office asistentov
 
 ---
@@ -66,7 +66,7 @@
 
 - First-In-First-Out — najstarsie zasoby sa spotrebuju ako prve
 - Rozne davky mozu mat rozne nakupne ceny
-- System automaticky vyberka z najstarsich davok
+- System automaticky vybera z najstarsich davok
 - Kriticky dolezite pre potravinovy sortiment
 - Ak je aktivna akciova cena, pouzije sa namiesto FIFO
 
@@ -101,7 +101,7 @@
 - Filtrovanie podla vysky dlhu (< -5 EUR pre pripomienky)
 - Manualne prijimanie vkladov/platieb
 - Sledovanie dobrovolnych prispevkov na manko
-- Odosielanie automatizovanych pripienkových e-mailov
+- Odosielanie automatizovanych pripomienkovych e-mailov
 - Prehlad historie transakcii lubovolneho pouzivatela
 
 ---
@@ -158,10 +158,10 @@
 - **users** — zamestnanci a administratori (UUID, email, rola)
 - **products** — katalog produktov (nazov, EAN, cena, akciova cena)
 - **stock_batches** — FIFO zasoby (mnozstvo, nakupna cena, datum)
-- **account_entries** — financny hlavny kniha (vklady a nakupy)
-- **stock_adjustments** — inventurne zaznamy a mankovia
+- **account_entries** — financna hlavna kniha (vklady a nakupy)
+- **stock_adjustments** — inventurne zaznamy a manka
 - **shortage_contributions** — dobrovolne prispevky na manko
-- **login_codes** — OTP kody s expirackou
+- **login_codes** — OTP kody s expiraciou
 - Views: account_balances, account_history, shortage_summary
 
 ---
@@ -197,7 +197,7 @@
 - **Pre office asistentov**: Automatizovana administrativa, kontrola skladu
 - **Pre firmu**: Presna evidencia, minimalne straty, transparentnost
 - **Technicke vyhody**: PWA, offline podpora, skenovanie ciarovych kodov
-- **Financne**: FIFO ocenovanie, automaticke pripomienky, manko evidencia
+- **Financne**: FIFO ocenovanie, automaticke pripomienky, evidencia manka
 
 ---
 
