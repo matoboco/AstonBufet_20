@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../utils/api';
 import { Product, PurchaseResponse } from '../types';
@@ -7,6 +7,8 @@ import { PurchaseModal } from '../components/PurchaseModal';
 import { BarcodeScanner } from '../components/BarcodeScanner';
 import { Logo } from '../components/Logo';
 import { HelpTips } from '../components/HelpTips';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { PullToRefreshIndicator } from '../components/PullToRefreshIndicator';
 
 export const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -19,7 +21,7 @@ export const Products = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchProducts = async (isRefresh = false) => {
+  const fetchProducts = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
       const data = await api<Product[]>('/products');
@@ -30,11 +32,19 @@ export const Products = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  const handlePullRefresh = useCallback(async () => {
+    await fetchProducts(true);
+  }, [fetchProducts]);
+
+  const { containerRef, pullDistance, refreshing: pullRefreshing } = usePullToRefresh({
+    onRefresh: handlePullRefresh,
+  });
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   // Auto-dismiss error messages after 5 seconds
   useEffect(() => {
@@ -118,7 +128,7 @@ export const Products = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div ref={containerRef} className="min-h-screen bg-gray-50 pb-20 overflow-auto">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 p-4 pt-safe sticky top-0 z-10">
         <div className="flex items-center justify-between mb-3">
@@ -190,6 +200,8 @@ export const Products = () => {
           </button>
         </div>
       </header>
+
+      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={pullRefreshing} />
 
       {/* Message */}
       {message && (
