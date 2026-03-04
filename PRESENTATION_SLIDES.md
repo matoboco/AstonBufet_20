@@ -15,8 +15,9 @@
 ## Slajd 2: Problem, ktory riesime
 
 - Kto co kupil? Kolko dlhuje? Kolko je na sklade? — vsetko sa riesilo rucne
-- Office asistent travil cas rucnym zapisovanim nakupov a zostatkov
+- Majka (office asistentka) travila cas rucnym zapisovanim nakupov a zostatkov
 - Zamestnanci nemali prehlad o svojom ucte
+- Neprehladny nakup — dlhy zoznam produktov, tazke hladanie toho, co potrebujem
 - Chybajuci tovar (manka) sa tazko dohladaval
 
 ---
@@ -41,7 +42,7 @@
 
 ---
 
-## Slajd 5: Co vidi a robi office asistent — sklad
+## Slajd 5: Co vidi a robi Majka — sklad
 
 - Pridavanie tovaru na sklad (novy tovar aj doplnenie existujuceho)
 - Nastavenie akciovych cien s datumom ukoncenia akcie
@@ -51,7 +52,7 @@
 
 ---
 
-## Slajd 6: Co vidi a robi office asistent — dlznici
+## Slajd 6: Co vidi a robi Majka — dlznici
 
 - Prehlad vsetkych zamestnancov, ktori dlhuju za bufet
 - Prijimanie hotovostnych vkladov a platieb
@@ -62,7 +63,7 @@
 
 ## Slajd 7: Manko a inventura
 
-- Office asistent spocita skutocny stav tovaru na sklade
+- Majka spocita skutocny stav tovaru na sklade
 - System porovna so stavom v evidencii a vypocita rozdiel (manko)
 - Odpisy (expirovany ci poskodeny tovar) sa eviduju zvlast
 - Zamestnanci dostanu upozornenie o manku
@@ -73,7 +74,7 @@
 ## Slajd 8: Automaticke pripomienky
 
 - Kazdy mesiac system automaticky posle e-mail zamestnancom s dlhom viac ako 5 EUR
-- Office asistent moze pripomienku poslat aj kedykolvek rucne
+- Majka moze pripomienku poslat aj kedykolvek rucne
 - E-mail obsahuje aktualny zostatok a vyzvu na uhradu
 - Personalizovany pozdrav podla mena zamestnanca
 
