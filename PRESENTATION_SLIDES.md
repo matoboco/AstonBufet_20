@@ -7,213 +7,126 @@
 ## Slajd 1: Titulny slajd
 
 - **Aston Bufet 2.0** — Inteligentny firemny bufet
-- Progresivna webova aplikacia (PWA) pre automatizovane uctovanie nakupov a spravu skladu
-- Technologie: React + TypeScript + Node.js + PostgreSQL
+- Webova aplikacia pre jednoduchy nakup a spravu firemneho bufetu
+- Funguje na mobile aj pocitaci — staci otvorit prehliadac
 
 ---
 
-## Slajd 2: Problem a motivacia
+## Slajd 2: Problem, ktory riesime
 
-- Manualny proces evidencie nakupov vo firemnom bufete je neefektivny
-- Neprehladne sledovanie zostatkov a dlhov zamestnancov
-- Chybajuca kontrola nad zasobami (manka, expiracne doby)
-- Casovo narocna administrativa pre office asistentov
-
----
-
-## Slajd 3: Riesenie — Aston Bufet 2.0
-
-- Plne digitalizovany firemny bufet
-- Automaticke uctovanie kazdeho nakupu
-- Realne sledovanie zostatkov uctu v realnom case
-- PWA — instalovatelna na mobil, funguje aj offline
-- Dva typy pouzivatelov: **Zamestnanec** a **Office asistent**
+- Kto co kupil? Kolko dlhuje? Kolko je na sklade? — vsetko sa riesilo rucne
+- Office asistent travil cas rucnym zapisovanim nakupov a zostatkov
+- Zamestnanci nemali prehlad o svojom ucte
+- Chybajuci tovar (manka) sa tazko dohladaval
 
 ---
 
-## Slajd 4: Autentifikacia a bezpecnost
+## Slajd 3: Ako to funguje pre zamestnanca
 
-- Prihlasenie cez e-mail + jednorazovy kod (OTP) — ziadne hesla
-- JWT tokeny s rolami pre autorizaciu
-- Obmedzenie na firemnu domenu (@aston.sk)
-- Tokenove verziovanie pre bezpecny logout
-- Role-based pristup — zamestnanec vs. administrator
-
----
-
-## Slajd 5: Dashboard zamestnanca
-
-- Zobrazenie aktualneho zostatku na ucte (kredit / dlh)
-- Rychle akcie: Nakup, Skenovanie
-- Poslednych 5 transakcii
-- Sekcia akciovych produktov (ak su aktivne)
-- Upozornenie na manko (shortage warning modal)
+- Prihlasi sa cez firemny e-mail — prijde mu jednorazovy kod, ziadne heslo
+- Na hlavnej obrazovke vidi svoj zostatok (kredit alebo dlh)
+- Vyberie si produkt z katalogy alebo naskenuje ciarovy kod telefonom
+- Nakup sa okamzite zapise a zostatok sa aktualizuje
+- Vidí historiu svojich nakupov
 
 ---
 
-## Slajd 6: Nakup produktov
+## Slajd 4: Nakup a skenovanie
 
-- Katalog vsetkych dostupnych produktov s mnozstvom na sklade
-- Vyhladavanie podla nazvu alebo EAN kodu
-- **Skenovanie ciaroveho kodu** cez kameru telefonu (ZXing kniznica)
-- Automaticky vypocet ceny podla **FIFO metody**
-- Okamzita aktualizacia zostatku po nakupe
-- Podpora akciovych cien s casovym obmedzenim
-
----
-
-## Slajd 7: FIFO metoda ocenovania
-
-- First-In-First-Out — najstarsie zasoby sa spotrebuju ako prve
-- Rozne davky mozu mat rozne nakupne ceny
-- System automaticky vybera z najstarsich davok
-- Kriticky dolezite pre potravinovy sortiment
-- Ak je aktivna akciova cena, pouzije sa namiesto FIFO
+- Katalog produktov s aktualnymi cenami a dostupnostou
+- Moznost vyhladavania podla nazvu
+- **Skenovanie ciaroveho kodu** priamo kamerou telefonu — rychly nakup
+- Akciove ceny sa zobrazia automaticky (napr. pred expiraciou)
+- Po nakupe sa ihned aktualizuje zostatok na ucte
 
 ---
 
-## Slajd 8: Uctovny system (Ledger)
+## Slajd 5: Co vidi a robi office asistent — sklad
 
-- Kazda transakcia je zaznam v ucte (account_entries)
-- Kladna suma = vklad/platba
-- Zaporna suma = nakup
-- Zostatok = sucet vsetkych zaznamov
-- Atomicke operacie — konzistentnost dat pri kazdom nakupe
-- Historia transakcii (poslednych 50)
-
----
-
-## Slajd 9: Sprava skladu (Office asistent)
-
-- Pridavanie novych davok tovaru s FIFO podporou
-- Aktualizacia nazvov a detailov produktov
-- Nastavenie akciovych cien s datumom expiracie
-- Inventura — porovnanie ocakavaneho vs. skutocneho mnozstva
-- Evidencia mankov a odpisov
-- Mazanie produktov (iba pri nulovom sklade)
-- Vyhladavanie cez ciarovy kod
+- Pridavanie tovaru na sklad (novy tovar aj doplnenie existujuceho)
+- Nastavenie akciovych cien s datumom ukoncenia akcie
+- Inventura — porovnanie skutocneho stavu s ocakavanym
+- Evidencia mankov a odpisov (expiracie, poskodeny tovar)
+- Vyhladavanie produktov cez ciarovy kod
 
 ---
 
-## Slajd 10: Sprava dlznikov
+## Slajd 6: Co vidi a robi office asistent — dlznici
 
-- Prehlad vsetkych zamestnancov so zapornym zostatkom
-- Filtrovanie podla vysky dlhu (< -5 EUR pre pripomienky)
-- Manualne prijimanie vkladov/platieb
-- Sledovanie dobrovolnych prispevkov na manko
-- Odosielanie automatizovanych pripomienkovych e-mailov
-- Prehlad historie transakcii lubovolneho pouzivatela
+- Prehlad vsetkych zamestnancov, ktori dlhuju za bufet
+- Prijimanie hotovostnych vkladov a platieb
+- Odosielanie pripomienkovych e-mailov dlznikom (manualne alebo automaticky 1x mesacne)
+- Prehlad historie nakupov a platieb kazdeho zamestnanca
 
 ---
 
-## Slajd 11: Manko a inventura
+## Slajd 7: Manko a inventura
 
-- Office asistent vykonava inventuru (expected vs. actual)
-- System automaticky vypocita manko (rozdiel)
-- Odpisy (expiracie, poskodenia) sa nezapocitavaju do manka
-- Vsetci pouzivatelia dostanu upozornenie s detailmi
-- Dobrovolne prispevky na manko su evidovane osobitne
-- Celkovy prehlad: shortage summary
-
----
-
-## Slajd 12: Automatizovane e-mailove pripomienky
-
-- **Automaticky** 1. den v mesiaci o 9:00 (Europe/Bratislava)
-- **Manualne** spustenie office asistentom kedykolvek
-- Odosiela sa iba pouzivatelom so zostatkom < -5 EUR
-- Personalizovany pozdrav podla mena
-- Zobrazenie aktualneho zostatku a vyzva na uhradu
+- Office asistent spocita skutocny stav tovaru na sklade
+- System porovna so stavom v evidencii a vypocita rozdiel (manko)
+- Odpisy (expirovany ci poskodeny tovar) sa eviduju zvlast
+- Zamestnanci dostanu upozornenie o manku
+- Dobrovolne prispevky na pokrytie manka su evidovane osobitne
 
 ---
 
-## Slajd 13: PWA funkcie
+## Slajd 8: Automaticke pripomienky
 
-- Instalovatelna na domovsku obrazovku mobilu
-- Offline cachovanie — zakladna funkcionalita bez internetu
-- Automaticka detekcia novej verzie aplikacie
-- Manualne spustenie aktualizacie v nastaveniach
-- Service Worker pre cachovanie zdrojov
-
----
-
-## Slajd 14: Technologicky stack
-
-| Vrstva     | Technologia                              |
-|------------|------------------------------------------|
-| Frontend   | React 18, TypeScript, Vite, TailwindCSS  |
-| Backend    | Node.js/Bun, Express, TypeScript         |
-| Databaza   | PostgreSQL 8+                            |
-| Auth       | JWT + OTP (Nodemailer)                   |
-| Sken       | ZXing (ciarove kody), React Webcam       |
-| PWA        | Vite PWA plugin, Service Worker          |
-| Validacia  | Zod schemas                              |
-| Cron       | Node-Cron (mesacne pripomienky)          |
-| Testy      | Jest                                     |
+- Kazdy mesiac system automaticky posle e-mail zamestnancom s dlhom viac ako 5 EUR
+- Office asistent moze pripomienku poslat aj kedykolvek rucne
+- E-mail obsahuje aktualny zostatok a vyzvu na uhradu
+- Personalizovany pozdrav podla mena zamestnanca
 
 ---
 
-## Slajd 15: Databazovy model
+## Slajd 9: Aplikacia na mobile
 
-- **users** — zamestnanci a administratori (UUID, email, rola)
-- **products** — katalog produktov (nazov, EAN, cena, akciova cena)
-- **stock_batches** — FIFO zasoby (mnozstvo, nakupna cena, datum)
-- **account_entries** — financna hlavna kniha (vklady a nakupy)
-- **stock_adjustments** — inventurne zaznamy a manka
-- **shortage_contributions** — dobrovolne prispevky na manko
-- **login_codes** — OTP kody s expiraciou
-- Views: account_balances, account_history, shortage_summary
+- Aplikacia sa da nainstalovat na domovsku obrazovku telefonu (ako bezna appka)
+- Funguje aj s obmedzenym pripojenim na internet
+- Automaticky upozorni na novu verziu aplikacie
 
 ---
 
-## Slajd 16: API architektura
+## Slajd 10: Pouzite technologie
 
-- RESTful API s jasnym rozdelenim:
-  - `/auth` — autentifikacia (OTP)
-  - `/products` — katalog a sprava produktov
-  - `/purchases` — vykonavanie nakupov (FIFO)
-  - `/stock` — skladove operacie
-  - `/account` — zostatky, vklady, historia
-  - `/admin` — sprava dlznikov a pripomienok
-- Middleware: JWT overenie, kontrola roli
-- Validacia vstupov cez Zod schemas
+- **Webova aplikacia**: React, TypeScript, TailwindCSS
+- **Server**: Node.js, Express, PostgreSQL databaza
+- **Bezpecnost**: Prihlasenie cez jednorazovy kod (OTP), pristup podla roli
+- **Dalsie**: skenovanie ciarovych kodov, automaticke e-maily, offline podpora (PWA)
 
 ---
 
-## Slajd 17: Bezpecnostne opatrenia
+## Slajd 11: Architektura systemu
 
-- Ziadne hesla — iba OTP kody s 10-minutovou platnostou
-- JWT s role-based pristupom
-- Tokenove verziovanie pre bezpecny logout
-- Izolovane data — zamestnanec vidi iba vlastne udaje
-- Skladove a financne operacie iba pre administratora
-- Volitelne obmedzenie e-mailovych domen
+- Frontend (co vidia pouzivatelia) komunikuje so serverom cez REST API
+- Server spracovava logiku nakupov, skladu a uctov
+- Vsetky data su ulozene v PostgreSQL databaze
+- System automaticky: pocita ceny podla FIFO metody, posiela pripomienky, sleduje zasoby
 
 ---
 
-## Slajd 18: Zhrnutie a benefity
+## Slajd 12: Zhrnutie a benefity
 
-- **Pre zamestnancov**: Jednoduchy a rychly nakup, prehlad financii
-- **Pre office asistentov**: Automatizovana administrativa, kontrola skladu
-- **Pre firmu**: Presna evidencia, minimalne straty, transparentnost
-- **Technicke vyhody**: PWA, offline podpora, skenovanie ciarovych kodov
-- **Financne**: FIFO ocenovanie, automaticke pripomienky, evidencia manka
+- **Pre zamestnancov**: Rychly nakup, prehlad o svojom ucte, ziadne hesla
+- **Pre office asistentov**: Menej administrativy, automaticke pripomienky, prehlad o sklade
+- **Pre firmu**: Presna evidencia, transparentnost, minimalne straty
+- Vsetko dostupne na mobile aj pocitaci
 
 ---
 
-## Slajd 19: Demo (navrh scenara)
+## Slajd 13: Demo (navrh scenara)
 
-1. Prihlasenie cez OTP kod
+1. Prihlasenie cez e-mail a jednorazovy kod
 2. Prehlad dashboardu so zostatkom
-3. Nakup produktu (klik + skenovanie)
-4. Zobrazenie historie transakcii
-5. Prepnutie na Office asistenta
+3. Nakup produktu kliknutim a skenovanim
+4. Zobrazenie historie nakupov
+5. Prepnutie na rolu office asistenta
 6. Inventura a zaznam manka
 7. Odoslanie pripomienky dlznikom
 
 ---
 
-## Slajd 20: Dakujem za pozornost
+## Slajd 14: Dakujem za pozornost
 
 - Otazky a diskusia
 - Kontakt / repozitar projektu
