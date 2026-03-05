@@ -61,19 +61,95 @@ tailwind.config = {
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===0 && 'active'"
        style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <div class="w-[8vw] h-1 bg-primary-400 rounded-full mb-8"></div>
-    <h1 class="text-white font-extrabold leading-tight mb-3" style="font-size:clamp(2.5rem,5vw,5.5rem)">
-      Aston Bufet 2.0
-    </h1>
-    <p class="text-white font-semibold mb-4" style="font-size:clamp(1.2rem,2.2vw,2.5rem)">
-      Inteligentny firemny bufet
-    </p>
-    <p class="text-white/70 max-w-[70%] leading-relaxed" style="font-size:clamp(1rem,1.8vw,2rem)">
-      Webova aplikacia pre jednoduchy nakup a spravu firemneho bufetu.<br>
-      Funguje na mobile aj pocitaci — staci otvorit prehliadac.
-    </p>
+    <div class="flex items-center justify-between w-full">
+      <div class="flex-1 max-w-[55%]">
+        <div class="w-[8vw] h-1 bg-primary-400 rounded-full mb-8"></div>
+        <h1 class="text-white font-extrabold leading-tight mb-3" style="font-size:clamp(2.5rem,5vw,5.5rem)">
+          Aston Bufet 2.0
+        </h1>
+        <p class="text-white font-semibold mb-4" style="font-size:clamp(1.2rem,2.2vw,2.5rem)">
+          Inteligentny firemny bufet
+        </p>
+        <p class="text-white/70 leading-relaxed" style="font-size:clamp(1rem,1.8vw,2rem)">
+          Webova aplikacia pre jednoduchy nakup a spravu firemneho bufetu.<br>
+          Funguje na mobile aj pocitaci — staci otvorit prehliadac.
+        </p>
+      </div>
+      <!-- Phone mockup -->
+      <div class="relative flex-shrink-0 hidden md:flex items-center justify-center" style="width:clamp(200px,22vw,340px)">
+        <div class="absolute inset-0 rounded-[3rem] bg-primary-400/20 blur-[60px] scale-110"></div>
+        <div class="absolute inset-0 rounded-[3rem] bg-primary-300/10 blur-[100px] scale-125"></div>
+        <div class="relative rounded-[2.2rem] border-[3px] border-white/15 overflow-hidden shadow-2xl" style="width:100%; aspect-ratio:9/19; background:#f0fdfa">
+          <!-- Status bar -->
+          <div class="flex justify-between items-center px-5 pt-2 pb-1" style="font-size:0.65rem">
+            <span class="font-semibold text-gray-800">23:32</span>
+            <div class="flex gap-1 items-center text-gray-600">
+              <span style="font-size:0.6rem">●●●</span>
+            </div>
+          </div>
+          <!-- App header -->
+          <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100">
+            <div class="flex items-baseline gap-1">
+              <span class="font-extrabold text-gray-900" style="font-size:clamp(0.7rem,1.2vw,1rem)">aston</span>
+              <span class="font-light text-gray-400" style="font-size:clamp(0.7rem,1.2vw,1rem)">bufet</span>
+              <span class="text-primary-600 border border-primary-600 rounded px-1 font-semibold" style="font-size:0.45rem">2.0</span>
+            </div>
+          </div>
+          <!-- Balance card -->
+          <div class="mx-3 mt-3 bg-white rounded-xl p-3 shadow-sm">
+            <p class="text-gray-400" style="font-size:0.5rem">Aktualny zostatok</p>
+            <p class="font-bold text-primary-600" style="font-size:clamp(0.9rem,1.6vw,1.4rem)">9.20 €</p>
+          </div>
+          <!-- Action buttons -->
+          <div class="flex gap-2 mx-3 mt-2">
+            <div class="flex-1 bg-white rounded-xl py-3 flex flex-col items-center shadow-sm">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+              <span class="text-gray-700 font-semibold mt-1" style="font-size:0.45rem">Nakup</span>
+            </div>
+            <div class="flex-1 bg-white rounded-xl py-3 flex flex-col items-center shadow-sm">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              <span class="text-gray-700 font-semibold mt-1" style="font-size:0.45rem">Skenovať</span>
+            </div>
+          </div>
+          <!-- Sale section -->
+          <div class="mx-3 mt-3">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-bold text-red-500" style="font-size:0.5rem">Akciove produkty</span>
+              <span class="text-primary-500" style="font-size:0.4rem">Vsetky produkty</span>
+            </div>
+            <div class="bg-white rounded-xl p-2 border border-red-200 shadow-sm">
+              <div class="flex justify-between items-start">
+                <div>
+                  <span class="font-bold text-gray-800 block" style="font-size:0.55rem">Kava</span>
+                  <span class="text-primary-500" style="font-size:0.4rem">Na sklade: 100</span>
+                </div>
+                <div class="text-right">
+                  <span class="bg-red-500 text-white rounded px-1 font-bold" style="font-size:0.35rem">AKCIA</span>
+                  <span class="block font-bold text-red-500" style="font-size:0.55rem">1.00 €</span>
+                  <span class="block text-gray-400 line-through" style="font-size:0.35rem">1.20 €</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Bottom nav -->
+          <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around py-2">
+            <div class="flex flex-col items-center">
+              <svg class="w-4 h-4 text-primary-600" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+              <span class="text-primary-600 font-semibold" style="font-size:0.35rem">Domov</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
+              <span class="text-gray-400" style="font-size:0.35rem">Produkty</span>
+            </div>
+            <div class="flex flex-col items-center">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span class="text-gray-400" style="font-size:0.35rem">Profil</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">1 / 14</span>
-    <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">🛒</span>
   </div>
 
   <!-- SLIDE 2: Problem -->
