@@ -37,15 +37,16 @@ tailwind.config = {
 </head>
 <body class="bg-black overflow-hidden h-screen w-screen"
   x-data="{
-    current: 0,
+    current: Math.max(0, Math.min(parseInt(location.hash.slice(1)) - 1 || 0, 13)),
     total: 14,
-    go(dir) { this.current = Math.max(0, Math.min(this.current + dir, this.total - 1)) },
+    go(dir) { this.current = Math.max(0, Math.min(this.current + dir, this.total - 1)); location.hash = this.current + 1 },
     progress() { return ((this.current + 1) / this.total * 100) + '%' },
     toggleFS() {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen();
       else document.exitFullscreen();
     }
   }"
+  x-init="location.hash = current + 1; window.addEventListener('hashchange', () => { let s = parseInt(location.hash.slice(1)); if (s >= 1 && s <= total) current = s - 1 })"
   @keydown.right.prevent="go(1)"
   @keydown.space.prevent="go(1)"
   @keydown.page-down.prevent="go(1)"
