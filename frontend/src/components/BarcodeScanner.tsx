@@ -15,6 +15,27 @@ export const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
   const onScanRef = useRef(onScan);
   onScanRef.current = onScan;
 
+  const playBeep = useCallback(() => {
+    try {
+      const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(1200, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.15);
+    } catch {
+      // Audio not supported, silently ignore
+    }
+  }, []);
+
   const handleScanResult = useCallback((code: string) => {
     if (hasScannedRef.current) return;
     hasScannedRef.current = true;
@@ -22,11 +43,14 @@ export const BarcodeScanner = ({ onScan, onClose }: BarcodeScannerProps) => {
     // Stop scanning immediately
     codeReaderRef.current?.reset();
 
+    // Play beep sound on successful scan
+    playBeep();
+
     // Call onScan after a small delay to ensure cleanup
     setTimeout(() => {
       onScanRef.current(code);
     }, 50);
-  }, []);
+  }, [playBeep]);
 
   useEffect(() => {
     const codeReader = new BrowserMultiFormatReader();
