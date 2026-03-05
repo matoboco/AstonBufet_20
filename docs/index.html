@@ -37,16 +37,15 @@ tailwind.config = {
 </head>
 <body class="bg-black overflow-hidden h-screen w-screen"
   x-data="{
-    current: Math.max(0, Math.min(parseInt(location.hash.slice(1)) - 1 || 0, 13)),
+    current: 0,
     total: 14,
-    go(dir) { this.current = Math.max(0, Math.min(this.current + dir, this.total - 1)); location.hash = this.current + 1 },
+    go(dir) { this.current = Math.max(0, Math.min(this.current + dir, this.total - 1)) },
     progress() { return ((this.current + 1) / this.total * 100) + '%' },
     toggleFS() {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen();
       else document.exitFullscreen();
     }
   }"
-  x-init="location.hash = current + 1; window.addEventListener('hashchange', () => { let s = parseInt(location.hash.slice(1)); if (s >= 1 && s <= total) current = s - 1 })"
   @keydown.right.prevent="go(1)"
   @keydown.space.prevent="go(1)"
   @keydown.page-down.prevent="go(1)"
@@ -61,127 +60,51 @@ tailwind.config = {
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===0 && 'active'"
        style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <div class="flex items-center justify-between w-full">
-      <div class="flex-1 max-w-[55%]">
-        <div class="w-[8vw] h-1 bg-primary-400 rounded-full mb-8"></div>
-        <h1 class="text-white font-extrabold leading-tight mb-3" style="font-size:clamp(2.5rem,5vw,5.5rem)">
-          Aston Bufet 2.0
-        </h1>
-        <p class="text-white font-semibold mb-4" style="font-size:clamp(1.2rem,2.2vw,2.5rem)">
-          Inteligentny firemny bufet
-        </p>
-        <p class="text-white/70 leading-relaxed" style="font-size:clamp(1rem,1.8vw,2rem)">
-          Webova aplikacia pre jednoduchy nakup a spravu firemneho bufetu.<br>
-          Funguje na mobile aj pocitaci — staci otvorit prehliadac.
-        </p>
-      </div>
-      <!-- Phone mockup -->
-      <div class="relative flex-shrink-0 hidden md:flex items-center justify-center" style="width:clamp(200px,22vw,340px)">
-        <div class="absolute inset-0 rounded-[3rem] bg-primary-400/20 blur-[60px] scale-110"></div>
-        <div class="absolute inset-0 rounded-[3rem] bg-primary-300/10 blur-[100px] scale-125"></div>
-        <div class="relative rounded-[2.2rem] border-[3px] border-white/15 overflow-hidden shadow-2xl" style="width:100%; aspect-ratio:9/19; background:#f0fdfa">
-          <!-- Status bar -->
-          <div class="flex justify-between items-center px-5 pt-2 pb-1" style="font-size:0.65rem">
-            <span class="font-semibold text-gray-800">23:32</span>
-            <div class="flex gap-1 items-center text-gray-600">
-              <span style="font-size:0.6rem">●●●</span>
-            </div>
-          </div>
-          <!-- App header -->
-          <div class="flex items-center justify-between px-4 py-2 border-b border-gray-100">
-            <div class="flex items-baseline gap-1">
-              <span class="font-extrabold text-gray-900" style="font-size:clamp(0.7rem,1.2vw,1rem)">aston</span>
-              <span class="font-light text-gray-400" style="font-size:clamp(0.7rem,1.2vw,1rem)">bufet</span>
-              <span class="text-primary-600 border border-primary-600 rounded px-1 font-semibold" style="font-size:0.45rem">2.0</span>
-            </div>
-          </div>
-          <!-- Balance card -->
-          <div class="mx-3 mt-3 bg-white rounded-xl p-3 shadow-sm">
-            <p class="text-gray-400" style="font-size:0.5rem">Aktualny zostatok</p>
-            <p class="font-bold text-primary-600" style="font-size:clamp(0.9rem,1.6vw,1.4rem)">9.20 €</p>
-          </div>
-          <!-- Action buttons -->
-          <div class="flex gap-2 mx-3 mt-2">
-            <div class="flex-1 bg-white rounded-xl py-3 flex flex-col items-center shadow-sm">
-              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
-              <span class="text-gray-700 font-semibold mt-1" style="font-size:0.45rem">Nakup</span>
-            </div>
-            <div class="flex-1 bg-white rounded-xl py-3 flex flex-col items-center shadow-sm">
-              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-              <span class="text-gray-700 font-semibold mt-1" style="font-size:0.45rem">Skenovať</span>
-            </div>
-          </div>
-          <!-- Sale section -->
-          <div class="mx-3 mt-3">
-            <div class="flex justify-between items-center mb-1">
-              <span class="font-bold text-red-500" style="font-size:0.5rem">Akciove produkty</span>
-              <span class="text-primary-500" style="font-size:0.4rem">Vsetky produkty</span>
-            </div>
-            <div class="bg-white rounded-xl p-2 border border-red-200 shadow-sm">
-              <div class="flex justify-between items-start">
-                <div>
-                  <span class="font-bold text-gray-800 block" style="font-size:0.55rem">Kava</span>
-                  <span class="text-primary-500" style="font-size:0.4rem">Na sklade: 100</span>
-                </div>
-                <div class="text-right">
-                  <span class="bg-red-500 text-white rounded px-1 font-bold" style="font-size:0.35rem">AKCIA</span>
-                  <span class="block font-bold text-red-500" style="font-size:0.55rem">1.00 €</span>
-                  <span class="block text-gray-400 line-through" style="font-size:0.35rem">1.20 €</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- Bottom nav -->
-          <div class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-around py-2">
-            <div class="flex flex-col items-center">
-              <svg class="w-4 h-4 text-primary-600" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-              <span class="text-primary-600 font-semibold" style="font-size:0.35rem">Domov</span>
-            </div>
-            <div class="flex flex-col items-center">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 00-8 0v2"/></svg>
-              <span class="text-gray-400" style="font-size:0.35rem">Produkty</span>
-            </div>
-            <div class="flex flex-col items-center">
-              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span class="text-gray-400" style="font-size:0.35rem">Profil</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div class="w-[8vw] h-1 bg-primary-400 rounded-full mb-8"></div>
+    <h1 class="text-white font-extrabold leading-tight mb-3" style="font-size:clamp(2.5rem,5vw,5.5rem)">
+      Aston Bufet 2.0
+    </h1>
+    <p class="text-white font-semibold mb-4" style="font-size:clamp(1.2rem,2.2vw,2.5rem)">
+      Inteligentny firemny bufet
+    </p>
+    <p class="text-white/70 max-w-[70%] leading-relaxed" style="font-size:clamp(1rem,1.8vw,2rem)">
+      Webova aplikacia pre jednoduchy nakup a spravu firemneho bufetu.<br>
+      Funguje na mobile aj pocitaci — staci otvorit prehliadac.
+    </p>
     <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">1 / 14</span>
+    <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">🛒</span>
   </div>
 
   <!-- SLIDE 2: Problem -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===1 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
+       style="background: linear-gradient(180deg, #f9fafb 0%, #ecfdf5 100%)">
+    <h2 class="text-gray-900 font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Problem, ktory riesime
     </h2>
     <ul class="flex flex-col gap-[2.2vh] list-none">
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Kto co kupil? Kolko dlhuje? Kolko je na sklade? — <strong class="text-primary-300">vsetko sa riesilo rucne</strong>
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Kto co kupil? Kolko dlhuje? Kolko je na sklade? — <strong class="text-primary-700">vsetko sa riesilo rucne</strong>
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        <strong class="text-primary-300">Majka</strong> (office asistentka) travila cas rucnym zapisovanim nakupov a zostatkov
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        <strong class="text-primary-700">Majka</strong> (office asistentka) travila cas rucnym zapisovanim nakupov a zostatkov
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Zamestnanci <strong class="text-primary-300">nemali prehlad</strong> o svojom ucte
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Zamestnanci <strong class="text-primary-700">nemali prehlad</strong> o svojom ucte
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Neprehladny nakup — <strong class="text-primary-300">dlhy zoznam produktov</strong>, tazke hladanie toho, co potrebujem
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Neprehladny nakup — <strong class="text-primary-700">dlhy zoznam produktov</strong>, tazke hladanie toho, co potrebujem
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
         Chybajuci tovar (manka) sa tazko dohladaval
       </li>
     </ul>
-    <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">2 / 14</span>
+    <span class="absolute top-[3vh] right-[4vw] text-gray-400 font-semibold tracking-widest uppercase" style="font-size:1.1vw">2 / 14</span>
     <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">📋</span>
   </div>
 
@@ -221,63 +144,63 @@ tailwind.config = {
   <!-- SLIDE 4: Nakup a skenovanie -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===3 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
+       style="background: linear-gradient(180deg, #f9fafb 0%, #ecfdf5 100%)">
+    <h2 class="text-gray-900 font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Nakup a skenovanie
     </h2>
     <ul class="flex flex-col gap-[2.2vh] list-none">
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Katalog produktov s <strong class="text-primary-300">aktualnymi cenami</strong> a dostupnostou
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Katalog produktov s <strong class="text-primary-700">aktualnymi cenami</strong> a dostupnostou
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Moznost <strong class="text-primary-300">vyhladavania</strong> podla nazvu
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Moznost <strong class="text-primary-700">vyhladavania</strong> podla nazvu
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        <strong class="text-primary-300">Skenovanie ciaroveho kodu</strong> priamo kamerou telefonu — rychly nakup
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        <strong class="text-primary-700">Skenovanie ciaroveho kodu</strong> priamo kamerou telefonu — rychly nakup
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
         Akciove ceny sa zobrazia automaticky (napr. pred expiraciou)
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Po nakupe sa <strong class="text-primary-300">ihned aktualizuje zostatok</strong> na ucte
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Po nakupe sa <strong class="text-primary-700">ihned aktualizuje zostatok</strong> na ucte
       </li>
     </ul>
-    <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">4 / 14</span>
+    <span class="absolute top-[3vh] right-[4vw] text-gray-400 font-semibold tracking-widest uppercase" style="font-size:1.1vw">4 / 14</span>
     <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">📱</span>
   </div>
 
   <!-- SLIDE 5: Majka — sklad -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===4 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
+       style="background: linear-gradient(135deg, #065f46 0%, #059669 100%)">
     <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Co vidi a robi Majka — sklad
     </h2>
     <ul class="flex flex-col gap-[2.2vh] list-none">
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
         <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
-        <strong class="text-primary-300">Pridavanie tovaru</strong> na sklad (novy tovar aj doplnenie existujuceho)
+        <strong class="text-primary-200">Pridavanie tovaru</strong> na sklad (novy tovar aj doplnenie existujuceho)
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
         <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
-        Nastavenie <strong class="text-primary-300">akciovych cien</strong> s datumom ukoncenia akcie
+        Nastavenie <strong class="text-primary-200">akciovych cien</strong> s datumom ukoncenia akcie
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
         <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
-        <strong class="text-primary-300">Inventura</strong> — porovnanie skutocneho stavu s ocakavanym
+        <strong class="text-primary-200">Inventura</strong> — porovnanie skutocneho stavu s ocakavanym
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
         <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
-        Evidencia <strong class="text-primary-300">mankov a odpisov</strong> (expiracie, poskodeny tovar)
+        Evidencia <strong class="text-primary-200">mankov a odpisov</strong> (expiracie, poskodeny tovar)
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
         <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
-        Vyhladavanie produktov cez <strong class="text-primary-300">ciarovy kod</strong>
+        Vyhladavanie produktov cez <strong class="text-primary-200">ciarovy kod</strong>
       </li>
     </ul>
     <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">5 / 14</span>
@@ -287,29 +210,29 @@ tailwind.config = {
   <!-- SLIDE 6: Majka — dlznici -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===5 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
+       style="background: linear-gradient(180deg, #f9fafb 0%, #ecfdf5 100%)">
+    <h2 class="text-gray-900 font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Co vidi a robi Majka — dlznici
     </h2>
     <ul class="flex flex-col gap-[2.8vh] list-none">
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Prehlad vsetkych zamestnancov, ktori <strong class="text-primary-300">dlhuju</strong> za bufet
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Prehlad vsetkych zamestnancov, ktori <strong class="text-primary-700">dlhuju</strong> za bufet
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Prijimanie <strong class="text-primary-300">hotovostnych vkladov</strong> a platieb
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Prijimanie <strong class="text-primary-700">hotovostnych vkladov</strong> a platieb
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Odosielanie <strong class="text-primary-300">pripomienkovych e-mailov</strong> dlznikom (manualne alebo automaticky 1x mesacne)
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Odosielanie <strong class="text-primary-700">pripomienkovych e-mailov</strong> dlznikom (manualne alebo automaticky 1x mesacne)
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Prehlad <strong class="text-primary-300">historie nakupov a platieb</strong> kazdeho zamestnanca
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Prehlad <strong class="text-primary-700">historie nakupov a platieb</strong> kazdeho zamestnanca
       </li>
     </ul>
-    <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">6 / 14</span>
+    <span class="absolute top-[3vh] right-[4vw] text-gray-400 font-semibold tracking-widest uppercase" style="font-size:1.1vw">6 / 14</span>
     <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">💰</span>
   </div>
 
@@ -349,25 +272,25 @@ tailwind.config = {
   <!-- SLIDE 8: Automaticke pripomienky -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===7 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
+       style="background: linear-gradient(135deg, #047857 0%, #10b981 100%)">
     <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Automaticke pripomienky
     </h2>
     <ul class="flex flex-col gap-[2.8vh] list-none">
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-white/50"></span>
         Kazdy mesiac system automaticky posle <strong>e-mail</strong> zamestnancom s dlhom viac ako 5 EUR
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-white/50"></span>
         Majka moze pripomienku poslat aj <strong>kedykolvek rucne</strong>
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-white/50"></span>
         E-mail obsahuje <strong>aktualny zostatok</strong> a vyzvu na uhradu
       </li>
       <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-white/50"></span>
         Personalizovany pozdrav podla <strong>mena</strong> zamestnanca
       </li>
     </ul>
@@ -378,25 +301,25 @@ tailwind.config = {
   <!-- SLIDE 9: PWA -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===8 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
+       style="background: linear-gradient(180deg, #f9fafb 0%, #ecfdf5 100%)">
+    <h2 class="text-gray-900 font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Aplikacia na mobile
     </h2>
     <ul class="flex flex-col gap-[3vh] list-none">
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Aplikacia sa da <strong class="text-primary-300">nainstalovat</strong> na domovsku obrazovku telefonu (ako bezna appka)
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Aplikacia sa da <strong class="text-primary-700">nainstalovat</strong> na domovsku obrazovku telefonu (ako bezna appka)
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Funguje aj s <strong class="text-primary-300">obmedzenym pripojenim</strong> na internet
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Funguje aj s <strong class="text-primary-700">obmedzenym pripojenim</strong> na internet
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Automaticky upozorni na <strong class="text-primary-300">novu verziu</strong> aplikacie
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Automaticky upozorni na <strong class="text-primary-700">novu verziu</strong> aplikacie
       </li>
     </ul>
-    <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">9 / 14</span>
+    <span class="absolute top-[3vh] right-[4vw] text-gray-400 font-semibold tracking-widest uppercase" style="font-size:1.1vw">9 / 14</span>
     <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">📲</span>
   </div>
 
@@ -432,42 +355,42 @@ tailwind.config = {
   <!-- SLIDE 11: Architektura -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===10 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
-    <h2 class="text-white font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
+       style="background: linear-gradient(180deg, #f9fafb 0%, #ecfdf5 100%)">
+    <h2 class="text-gray-900 font-bold leading-tight mb-8" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Architektura systemu
     </h2>
     <ul class="flex flex-col gap-[2.8vh] list-none">
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        <strong class="text-primary-300">Frontend</strong> (co vidia pouzivatelia) komunikuje so serverom cez REST API
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        <strong class="text-primary-700">Frontend</strong> (co vidia pouzivatelia) komunikuje so serverom cez REST API
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        <strong class="text-primary-300">Server</strong> spracovava logiku nakupov, skladu a uctov
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        <strong class="text-primary-700">Server</strong> spracovava logiku nakupov, skladu a uctov
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        Vsetky data su ulozene v <strong class="text-primary-300">PostgreSQL</strong> databaze
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        Vsetky data su ulozene v <strong class="text-primary-700">PostgreSQL</strong> databaze
       </li>
-      <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
-        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-400"></span>
-        System automaticky: pocita ceny podla <strong class="text-primary-300">FIFO</strong> metody, posiela pripomienky, sleduje zasoby
+      <li class="relative pl-[2.5vw] text-gray-900 leading-snug" style="font-size:clamp(1rem,2vw,2rem)">
+        <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-500"></span>
+        System automaticky: pocita ceny podla <strong class="text-primary-700">FIFO</strong> metody, posiela pripomienky, sleduje zasoby
       </li>
     </ul>
-    <span class="absolute top-[3vh] right-[4vw] text-white/30 font-semibold tracking-widest uppercase" style="font-size:1.1vw">11 / 14</span>
+    <span class="absolute top-[3vh] right-[4vw] text-gray-400 font-semibold tracking-widest uppercase" style="font-size:1.1vw">11 / 14</span>
     <span class="absolute right-[6vw] bottom-[8vh] opacity-10 pointer-events-none" style="font-size:clamp(3rem,8vw,10rem)">🏗️</span>
   </div>
 
   <!-- SLIDE 12: Zhrnutie -->
   <div class="slide flex-col justify-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===11 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
+       style="background: linear-gradient(135deg, #065f46 0%, #059669 100%)">
     <h2 class="text-white font-bold leading-tight mb-10" style="font-size:clamp(1.6rem,3.5vw,3.5rem)">
       Zhrnutie a benefity
     </h2>
     <div class="grid grid-cols-2 gap-x-[4vw] items-start">
       <div>
-        <h3 class="text-primary-300 font-bold border-b-[3px] border-primary-400 pb-2 mb-6" style="font-size:clamp(1rem,1.8vw,1.8rem)">Pre zamestnancov</h3>
+        <h3 class="text-primary-200 font-bold border-b-[3px] border-primary-400 pb-2 mb-6" style="font-size:clamp(1rem,1.8vw,1.8rem)">Pre zamestnancov</h3>
         <ul class="flex flex-col gap-[2vh] list-none">
           <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,1.8vw,1.8rem)">
             <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
@@ -484,7 +407,7 @@ tailwind.config = {
         </ul>
       </div>
       <div>
-        <h3 class="text-primary-300 font-bold border-b-[3px] border-primary-400 pb-2 mb-6" style="font-size:clamp(1rem,1.8vw,1.8rem)">Pre Majku a firmu</h3>
+        <h3 class="text-primary-200 font-bold border-b-[3px] border-primary-400 pb-2 mb-6" style="font-size:clamp(1rem,1.8vw,1.8rem)">Pre Majku a firmu</h3>
         <ul class="flex flex-col gap-[2vh] list-none">
           <li class="relative pl-[2.5vw] text-white leading-snug" style="font-size:clamp(1rem,1.8vw,1.8rem)">
             <span class="absolute left-0 top-[0.55em] w-[0.7em] h-[0.7em] rounded-full bg-primary-300"></span>
@@ -552,7 +475,7 @@ tailwind.config = {
   <!-- SLIDE 14: Dakujem -->
   <div class="slide flex-col justify-center items-center text-center absolute inset-0 px-[7vw] py-[5vh]"
        :class="current===13 && 'active'"
-       style="background: linear-gradient(135deg, #064e3b 0%, #111827 100%)">
+       style="background: linear-gradient(135deg, #047857 0%, #10b981 100%)">
     <h1 class="text-white font-extrabold leading-tight" style="font-size:clamp(2.5rem,5vw,5.5rem)">
       Dakujem za pozornost
     </h1>
