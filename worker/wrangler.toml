@@ -5,8 +5,8 @@ compatibility_date = "2024-12-01"
 [vars]
 CORS_ORIGIN = "https://bufet.aston.sk"
 SMTP_MODE = "console"
-OFFICE_ASSISTANT_EMAILS = ""
-ALLOWED_EMAIL_DOMAINS = ""
+OFFICE_ASSISTANT_EMAILS = "assistans@aston.sk"
+ALLOWED_EMAIL_DOMAINS = "aston.sk"
 
 # Secrets (set via `wrangler secret put`):
 # JWT_SECRET
@@ -17,6 +17,7 @@ ALLOWED_EMAIL_DOMAINS = ""
 binding = "DB"
 database_name = "aston-bufet-db"
 database_id = "f94c8d88-ab08-41c6-ba9d-74793a3cefd3"
+
 migrations_dir = "db/migrations"
 
 # Cron trigger: 1st day of month at 9:00 UTC (adjust for Europe/Bratislava)
