@@ -16,7 +16,7 @@ ALLOWED_EMAIL_DOMAINS = ""
 [[d1_databases]]
 binding = "DB"
 database_name = "aston-bufet-db"
-database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace after `wrangler d1 create aston-bufet-db`
+database_id = "f94c8d88-ab08-41c6-ba9d-74793a3cefd3"  # Replace after `wrangler d1 create aston-bufet-db`
 migrations_dir = "db/migrations"
 
 # Cron trigger: 1st day of month at 9:00 UTC (adjust for Europe/Bratislava)
