@@ -1,0 +1,24 @@
+name = "aston-bufet-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+CORS_ORIGIN = "https://bufet.aston.sk"
+SMTP_MODE = "console"
+OFFICE_ASSISTANT_EMAILS = "assistans@aston.sk"
+ALLOWED_EMAIL_DOMAINS = "aston.sk"
+
+# Secrets (set via `wrangler secret put`):
+# JWT_SECRET
+# SMTP_API_KEY
+# SMTP_FROM
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aston-bufet-db"
+database_id = "f94c8d88-ab08-41c6-ba9d-74793a3cefd3"  # Replace after `wrangler d1 create aston-bufet-db`
+migrations_dir = "db/migrations"
+
+# Cron trigger: 1st day of month at 9:00 UTC (adjust for Europe/Bratislava)
+[triggers]
+crons = ["0 8 1 * *"]
