@@ -40,7 +40,7 @@ const versionPlugin = () => ({
 });
 
 export default defineConfig({
-  base: '/bufet20/',
+  base: '/',
   plugins: [
     react(),
     versionPlugin(),
@@ -55,8 +55,8 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/bufet20/',
-        start_url: '/bufet20/',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
             src: 'pwa-192x192.png',
