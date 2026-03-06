@@ -17,6 +17,7 @@ ALLOWED_EMAIL_DOMAINS = ""
 binding = "DB"
 database_name = "aston-bufet-db"
 database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  # Replace after `wrangler d1 create aston-bufet-db`
+migrations_dir = "db/migrations"
 
 # Cron trigger: 1st day of month at 9:00 UTC (adjust for Europe/Bratislava)
 [triggers]
