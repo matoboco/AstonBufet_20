@@ -2,10 +2,10 @@ import type { Env } from './types';
 
 /**
  * Email service for Cloudflare Workers.
- * Uses MailChannels API (free for CF Workers) or Resend/other HTTP API.
+ * Uses SMTP2GO API for sending emails.
  *
  * In console mode, logs emails to console (for development).
- * In production, sends via MailChannels or configured SMTP API.
+ * In production, sends via SMTP2GO API.
  */
 
 interface EmailOptions {
@@ -25,25 +25,30 @@ async function sendEmail(env: Env, options: EmailOptions): Promise<void> {
     return;
   }
 
-  // Use MailChannels API (free for CF Workers)
-  // Alternative: Replace with Resend, SendGrid, or other API
-  const response = await fetch('https://api.mailchannels.net/tx/v1/send', {
+  const response = await fetch('https://api.smtp2go.com/v3/email/send', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': env.SMTP2GO_API_KEY,
+    },
     body: JSON.stringify({
-      personalizations: [{ to: [{ email: options.to }] }],
-      from: { email: env.SMTP_FROM || 'noreply@bufet.aston.sk' },
+      api_key: env.SMTP2GO_API_KEY,
+      to: [options.to],
+      sender: env.SMTP_FROM || 'noreply@bufet.aston.sk',
       subject: options.subject,
-      content: [
-        { type: 'text/plain', value: options.text },
-        { type: 'text/html', value: options.html },
-      ],
+      text_body: options.text,
+      html_body: options.html,
     }),
   });
 
   if (!response.ok) {
     const body = await response.text();
     throw new Error(`Email send failed (${response.status}): ${body}`);
+  }
+
+  const result = await response.json<{ data?: { succeeded?: number; failed?: number } }>();
+  if (result.data?.failed && result.data.failed > 0) {
+    throw new Error('SMTP2GO: email delivery failed');
   }
 }
 

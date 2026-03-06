@@ -10,7 +10,7 @@ ALLOWED_EMAIL_DOMAINS = "aston.sk"
 
 # Secrets (set via `wrangler secret put`):
 # JWT_SECRET
-# SMTP_API_KEY
+# SMTP2GO_API_KEY
 # SMTP_FROM
 
 [[d1_databases]]

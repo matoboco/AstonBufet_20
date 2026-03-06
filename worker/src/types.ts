@@ -3,7 +3,7 @@ export interface Env {
   JWT_SECRET: string;
   CORS_ORIGIN: string;
   SMTP_MODE: string;
-  SMTP_API_KEY: string;
+  SMTP2GO_API_KEY: string;
   SMTP_FROM: string;
   OFFICE_ASSISTANT_EMAILS: string;
   ALLOWED_EMAIL_DOMAINS: string;
