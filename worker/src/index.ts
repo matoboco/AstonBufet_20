@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { query } from './db';
+import { query, run } from './db';
 import { sendReminderEmail } from './email';
 import type { Env, AccountBalance } from './types';
 
@@ -99,10 +99,29 @@ async function handleScheduled(env: Env): Promise<void> {
   }
 }
 
+// Cleanup expired OTP codes (runs daily at midnight)
+async function cleanupExpiredOTPCodes(env: Env): Promise<void> {
+  console.log(`[${new Date().toISOString()}] Running expired OTP codes cleanup...`);
+
+  try {
+    const result = await run(
+      env.DB,
+      `DELETE FROM login_codes WHERE expires_at < datetime('now') OR used = 1`
+    );
+    console.log(`Deleted ${result.meta.changes} expired/used OTP codes`);
+  } catch (error) {
+    console.error('OTP cleanup error:', error);
+  }
+}
+
 // Export for Cloudflare Worker
 export default {
   fetch: app.fetch,
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(handleScheduled(env));
+    if (event.cron === '0 0 * * *') {
+      ctx.waitUntil(cleanupExpiredOTPCodes(env));
+    } else {
+      ctx.waitUntil(handleScheduled(env));
+    }
   },
 };
