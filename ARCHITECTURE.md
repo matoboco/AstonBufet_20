@@ -3,22 +3,22 @@
 ## Prehľad systému
 
 ```
-┌───────────────────────────────────────────────┐
-│                  Kubernetes                    │
-├─────────────┬─────────────┬──────────────────┤
-│  frontend   │   backend   │        db        │
-│  (nginx)    │ (bun+cron)  │   (postgres)     │
-│   :80       │    :3001    │     :5432        │
-└─────────────┴─────────────┴──────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                  Cloudflare Platform                     │
+├──────────────────┬──────────────────┬───────────────────┤
+│    frontend      │     worker       │       D1          │
+│ (static/Pages)   │  (Hono on Edge)  │    (SQLite)       │
+│                  │   + Cron Triggers│                   │
+└──────────────────┴──────────────────┴───────────────────┘
 ```
 
-Aplikácia pozostáva z 3 služieb:
+Aplikácia pozostáva z 2 hlavných častí:
 
-| Služba | Technológia | Účel |
-|--------|-------------|------|
-| **frontend** | Nginx + React SPA | Používateľské rozhranie (PWA) |
-| **backend** | Bun + Express + Cron | REST API server + automatické pripomienky |
-| **db** | PostgreSQL 16 | Databáza |
+| Časť | Technológia | Účel |
+|------|-------------|------|
+| **frontend** | React SPA (Vite build) | Používateľské rozhranie (PWA) |
+| **worker** | Cloudflare Worker (Hono) + Cron Triggers | REST API + automatické pripomienky + cleanup OTP |
+| **D1** | Cloudflare D1 (SQLite) | Databáza |
 
 ---
 
@@ -30,7 +30,8 @@ Aplikácia pozostáva z 3 služieb:
 - **Vite** - build tool
 - **Tailwind CSS** - styling
 - **React Router** - routing
-- **PWA** - service worker, offline podpora
+- **PWA** - service worker, offline podpora (vite-plugin-pwa)
+- **@zxing/library** + **react-webcam** - skenovanie čiarových kódov
 
 ### Štruktúra
 
@@ -40,13 +41,16 @@ frontend/src/
 ├── App.tsx               # Hlavný komponent, routing
 ├── types.ts              # TypeScript typy
 ├── components/
-│   ├── BalanceCard.tsx       # Karta so zostatkom
-│   ├── BarcodeScanner.tsx    # Skener čiarových kódov (kamera)
-│   ├── Navigation.tsx        # Spodná navigácia
-│   ├── ProductCard.tsx       # Karta produktu
-│   ├── PurchaseModal.tsx     # Modal pre nákup
+│   ├── BalanceCard.tsx           # Karta so zostatkom
+│   ├── BarcodeScanner.tsx        # Skener čiarových kódov (kamera)
+│   ├── HelpTips.tsx              # Pomocné tipy
+│   ├── Logo.tsx                  # Logo komponent
+│   ├── Navigation.tsx            # Spodná navigácia
+│   ├── ProductCard.tsx           # Karta produktu
+│   ├── PullToRefreshIndicator.tsx # Pull-to-refresh indikátor
+│   ├── PurchaseModal.tsx         # Modal pre nákup
 │   ├── ShortageWarningModal.tsx  # Upozornenie na manko
-│   └── TransactionList.tsx   # Zoznam transakcií
+│   └── TransactionList.tsx       # Zoznam transakcií
 ├── pages/
 │   ├── Login.tsx            # Prihlásenie (OTP)
 │   ├── Dashboard.tsx        # Hlavná stránka (zostatok, rýchle akcie)
@@ -55,7 +59,8 @@ frontend/src/
 │   ├── History.tsx          # História transakcií
 │   └── OfficeDashboard.tsx  # Dashboard pre office assistant
 ├── hooks/
-│   └── useAuth.ts           # Autentifikácia (JWT, localStorage)
+│   ├── useAuth.tsx          # Autentifikácia (JWT, localStorage)
+│   └── usePullToRefresh.ts  # Pull-to-refresh hook
 └── utils/
     └── api.ts               # HTTP klient pre API volania
 ```
@@ -77,46 +82,52 @@ frontend/src/
 
 ---
 
-## Backend
+## Worker (Backend)
 
 ### Technológie
 
-- **Bun** - JavaScript/TypeScript runtime (rýchlejší štart, natívna podpora TS)
-- **Express** - HTTP framework
-- **PostgreSQL** - databáza (pg driver)
-- **JWT** - autentifikácia
-- **Nodemailer** - odosielanie emailov
+- **Cloudflare Workers** - serverless edge runtime
+- **Hono** - ľahký HTTP framework pre edge
+- **Cloudflare D1** - SQLite databáza na edge
+- **jose** - JWT autentifikácia (Web Crypto API kompatibilná)
 - **Zod** - validácia vstupov
+- **SMTP2GO** - odosielanie emailov cez HTTP API
+- **Cron Triggers** - plánované úlohy (pripomienky, cleanup)
 
-### Prečo Bun?
+### Prečo Cloudflare Workers?
 
 | Výhoda | Popis |
 |--------|-------|
-| Rýchlejší štart | 2-4x rýchlejšie spustenie servera |
-| Natívny TypeScript | Bez potreby kompilácie (tsc) |
-| Rýchlejšia inštalácia | `bun install` je 10-25x rýchlejší ako `npm` |
-| Nižšia pamäť | Menšia spotreba RAM |
+| Edge runtime | Kód beží blízko používateľov, nízka latencia |
+| Serverless | Žiadna správa serverov, automatické škálovanie |
+| D1 databáza | SQLite na edge, žiadna správa PostgreSQL |
+| Cron Triggers | Natívne plánované úlohy bez externých služieb |
+| Nulové cold starts | Workers sa štartujú v milisekundách |
+| Integrácia | Jeden ekosystém (Workers + D1 + Pages) |
 
 ### Štruktúra
 
 ```
-backend/src/
-├── index.ts              # Entry point, Express app
-├── types.ts              # TypeScript typy
-├── db.ts                 # Databázové pripojenie, query helper
-├── middleware.ts         # JWT autentifikácia, role check
-├── validation.ts         # Zod schémy pre validáciu
-├── email.ts              # Odosielanie emailov (OTP, pripomienky)
-├── reminder.ts           # Cron job pre automatické pripomienky
-├── routes/
-│   ├── auth.ts           # Prihlásenie, verifikácia OTP
-│   ├── products.ts       # CRUD produktov
-│   ├── purchases.ts      # Nákupy (FIFO účtovanie)
-│   ├── stock.ts          # Naskladnenie, inventúra
-│   ├── account.ts        # Zostatky, vklady, história
-│   └── admin.ts          # Admin operácie
-└── migrations/
-    └── runner.ts         # Automatické migrácie pri štarte
+worker/
+├── wrangler.toml          # Konfigurácia Workers (bindings, crons, D1)
+├── src/
+│   ├── index.ts           # Entry point, Hono app, cron handler
+│   ├── types.ts           # TypeScript typy a Env interface
+│   ├── db.ts              # D1 database helpers (query, batch, UUID)
+│   ├── middleware.ts       # JWT autentifikácia, role check (jose)
+│   ├── validation.ts      # Zod schémy pre validáciu
+│   ├── email.ts           # Odosielanie emailov (SMTP2GO HTTP API)
+│   └── routes/
+│       ├── auth.ts        # Prihlásenie, OTP, overenie, profil
+│       ├── products.ts    # CRUD produktov, akciové ceny
+│       ├── purchases.ts   # Nákupy (FIFO účtovanie, D1 batch)
+│       ├── stock.ts       # Naskladnenie, inventúra
+│       ├── account.ts     # Zostatky, vklady, história, manko
+│       └── admin.ts       # Pripomienky, dlžníci, zoznam používateľov
+└── db/
+    └── migrations/
+        ├── 001_schema.sql # Kompletná schéma (SQLite syntax)
+        └── 002_seed.sql   # Testovacie dáta
 ```
 
 ### API Endpointy
@@ -125,9 +136,8 @@ backend/src/
 
 | Metóda | Endpoint | Popis |
 |--------|----------|-------|
-| POST | `/auth/login` | Odoslanie OTP na email |
-| POST | `/auth/verify` | Overenie OTP, vrátenie JWT |
-| GET | `/auth/me` | Aktuálny používateľ |
+| POST | `/auth/request-code` | Odoslanie OTP na email |
+| POST | `/auth/verify-code` | Overenie OTP, vrátenie JWT |
 | PUT | `/auth/profile` | Aktualizácia profilu (meno) |
 
 #### Produkty (`/products`)
@@ -135,9 +145,10 @@ backend/src/
 | Metóda | Endpoint | Popis |
 |--------|----------|-------|
 | GET | `/products` | Zoznam produktov so stavom skladu |
+| GET | `/products/on-sale` | Produkty v akcii |
 | GET | `/products/:id` | Detail produktu |
 | GET | `/products/by-ean/:ean` | Vyhľadanie podľa EAN |
-| GET | `/products/:id/price-preview` | Kalkulácia FIFO ceny |
+| GET | `/products/:id/price-preview` | Kalkulácia FIFO / akčnej ceny |
 | PUT | `/products/:id` | Úprava produktu (office_assistant) |
 | DELETE | `/products/:id` | Zmazanie produktu (office_assistant) |
 
@@ -145,15 +156,15 @@ backend/src/
 
 | Metóda | Endpoint | Popis |
 |--------|----------|-------|
-| POST | `/purchases` | Vykonanie nákupu (FIFO) |
+| POST | `/purchases` | Vykonanie nákupu (FIFO, D1 batch) |
 
 #### Sklad (`/stock`)
 
 | Metóda | Endpoint | Popis |
 |--------|----------|-------|
-| POST | `/stock/add` | Naskladnenie tovaru |
-| GET | `/stock/batches` | Zoznam šarží |
-| POST | `/stock/adjust` | Inventúra (korekcia stavu) |
+| GET | `/stock` | Zoznam šarží na sklade (office_assistant) |
+| POST | `/stock/add-batch` | Naskladnenie tovaru |
+| POST | `/stock/adjustment` | Inventúra (korekcia stavu) |
 | GET | `/stock/adjustments` | História korekcií |
 
 #### Účet (`/account`)
@@ -161,17 +172,32 @@ backend/src/
 | Metóda | Endpoint | Popis |
 |--------|----------|-------|
 | GET | `/account/my-balance` | Môj zostatok |
-| GET | `/account/my-history` | Moja história |
+| GET | `/account/my-history` | Moja história (posledných 50) |
 | GET | `/account/balances` | Všetky zostatky (office_assistant) |
-| POST | `/account/deposit` | Vklad hotovosti (office_assistant) |
-| POST | `/account/send-reminders` | Odoslanie pripomienok (office_assistant) |
+| GET | `/account/history/:user_id` | História konkrétneho používateľa |
+| POST | `/account/deposit` | Vklad + voliteľný príspevok na manko |
 | GET | `/account/shortage-warning` | Kontrola upozornenia na manko |
 | POST | `/account/acknowledge-shortage` | Potvrdenie upozornenia |
 | GET | `/account/shortage-summary` | Súhrn manka a príspevkov |
 
+#### Admin (`/admin`)
+
+| Metóda | Endpoint | Popis |
+|--------|----------|-------|
+| POST | `/admin/reminder` | Manuálne odoslanie pripomienok |
+| GET | `/admin/debtors` | Zoznam dlžníkov |
+| GET | `/admin/users` | Zoznam všetkých používateľov |
+
+### Cron Triggers
+
+| Cron výraz | Čas | Úloha |
+|------------|-----|-------|
+| `0 8 1 * *` | 1. deň mesiaca, 8:00 UTC | Odoslanie pripomienok dlžníkom (balance < -5 EUR) |
+| `0 0 * * *` | Denne o polnoci UTC | Čistenie expirovaných/použitých OTP kódov |
+
 ---
 
-## Databáza
+## Databáza (Cloudflare D1 / SQLite)
 
 ### ER Diagram
 
@@ -179,18 +205,19 @@ backend/src/
 ┌──────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │    users     │     │  account_entries │     │    products     │
 ├──────────────┤     ├──────────────────┤     ├─────────────────┤
-│ id (PK)      │◄────│ user_id (FK)     │     │ id (PK)         │
-│ email        │     │ id (PK)          │     │ name            │
+│ id (PK,TEXT) │◄────│ user_id (FK)     │     │ id (PK,TEXT)    │
+│ email        │     │ id (PK,TEXT)     │     │ name            │
 │ name         │     │ amount_cents     │     │ ean             │
 │ role         │     │ description      │     │ price_cents     │
-│ token_version│     │ created_at       │     │ created_at      │
-│ created_at   │     └──────────────────┘     └────────┬────────┘
-└──────┬───────┘                                       │
+│ token_version│     │ created_at       │     │ sale_price_cents│
+│ created_at   │     └──────────────────┘     │ sale_expires_at │
+└──────┬───────┘                              │ created_at      │
+       │                                      └────────┬────────┘
        │                                               │
        │         ┌──────────────────────┐              │
        │         │   stock_batches      │◄─────────────┘
        │         ├──────────────────────┤
-       │         │ id (PK)              │
+       │         │ id (PK,TEXT)         │
        │         │ product_id (FK)      │
        │         │ quantity             │
        │         │ price_cents          │
@@ -200,20 +227,22 @@ backend/src/
        │         ┌──────────────────────┐
        ├────────►│  stock_adjustments   │
        │         ├──────────────────────┤
-       │         │ id (PK)              │
+       │         │ id (PK,TEXT)         │
        │         │ product_id (FK)      │
        │         │ expected_quantity    │
        │         │ actual_quantity      │
        │         │ difference           │
-       │         │ is_write_off         │
+       │         │ reason               │
+       │         │ is_write_off (0/1)   │
        │         │ created_by (FK)      │
+       │         │ created_at           │
        │         └──────────────────────┘
        │
        │         ┌────────────────────────────┐
        ├────────►│  shortage_acknowledgements │
        │         ├────────────────────────────┤
-       │         │ id (PK)                    │
-       │         │ user_id (FK)               │
+       │         │ id (PK,TEXT)               │
+       │         │ user_id (FK, UNIQUE)       │
        │         │ acknowledged_at            │
        │         │ shortage_total             │
        │         └────────────────────────────┘
@@ -221,9 +250,10 @@ backend/src/
        │         ┌────────────────────────────┐
        └────────►│  shortage_contributions    │
                  ├────────────────────────────┤
-                 │ id (PK)                    │
+                 │ id (PK,TEXT)               │
                  │ user_id (FK)               │
                  │ amount_cents               │
+                 │ description                │
                  │ recorded_by (FK)           │
                  │ created_at                 │
                  └────────────────────────────┘
@@ -231,11 +261,11 @@ backend/src/
 ┌──────────────┐
 │ login_codes  │
 ├──────────────┤
-│ id (PK)      │
+│ id (PK,TEXT) │
 │ email        │
 │ code         │
 │ expires_at   │
-│ used         │
+│ used (0/1)   │
 └──────────────┘
 ```
 
@@ -244,21 +274,26 @@ backend/src/
 | Tabuľka | Popis |
 |---------|-------|
 | `users` | Používatelia (email, meno, rola) |
-| `products` | Produkty (názov, EAN, cena) |
+| `products` | Produkty (názov, EAN, cena, akciová cena) |
 | `stock_batches` | Šarže skladu (FIFO inventár) |
 | `account_entries` | Účtovné záznamy (nákupy, vklady) |
 | `login_codes` | Jednorazové prihlasovacie kódy (OTP) |
-| `stock_adjustments` | Inventúrne korekcie (manko/prebytok) |
+| `stock_adjustments` | Inventúrne korekcie (manko/prebytok/odpisy) |
 | `shortage_acknowledgements` | Potvrdenia upozornení na manko |
 | `shortage_contributions` | Príspevky na pokrytie manka |
 
-### Views
+### Rozdiely oproti pôvodnému PostgreSQL
 
-| View | Popis |
-|------|-------|
-| `account_balances` | Agregované zostatky používateľov |
-| `account_history` | História s priebežným zostatkom |
-| `shortage_summary` | Celkové manko a príspevky |
+| PostgreSQL (pôvodne) | D1 / SQLite (teraz) |
+|----------------------|---------------------|
+| UUID typ | TEXT s generovaným UUID (`randomblob`) |
+| TIMESTAMP | TEXT (ISO 8601 datetime) |
+| BOOLEAN | INTEGER (0/1) |
+| `NOW()` | `datetime('now')` |
+| BEGIN/COMMIT transakcie | D1 `batch()` (atomické) |
+| Database views | Inline SQL queries |
+| pg driver + Pool | D1 binding (`env.DB`) |
+| Nodemailer (SMTP) | SMTP2GO HTTP API (`fetch`) |
 
 ---
 
@@ -270,26 +305,29 @@ Pri nákupe sa použije metóda **First In, First Out**:
 2. Množstvo sa odoberá z najstarších šarží
 3. Cena sa počíta ako súčet (množstvo × cena) z každej šarže
 4. Prázdne šarže (quantity = 0) sa nemažú, zostávajú pre históriu
+5. Všetky zápisy (update šarží + account entry) sa vykonajú cez `D1 batch()` atomicky
+
+**Akciové ceny:** Ak má produkt aktívnu akciu (`sale_price_cents` + `sale_expires_at > now`), použije sa akciová cena namiesto FIFO ceny šarží.
 
 **Príklad:**
 ```
-Šarža 1: 5 ks × 0.80 € (najstaršia)
-Šarža 2: 10 ks × 0.90 €
+Šarža 1: 5 ks × 0.80 EUR (najstaršia)
+Šarža 2: 10 ks × 0.90 EUR
 
 Nákup: 7 ks
-→ 5 ks z Šarže 1 = 4.00 €
-→ 2 ks z Šarže 2 = 1.80 €
-→ Celkom: 5.80 €
+→ 5 ks z Šarže 1 = 4.00 EUR
+→ 2 ks z Šarže 2 = 1.80 EUR
+→ Celkom: 5.80 EUR
 ```
 
 ---
 
 ## Autentifikácia
 
-1. Používateľ zadá email
-2. Server vygeneruje 6-miestny OTP a odošle ho emailom
+1. Používateľ zadá email (len povolené domény, napr. `aston.sk`)
+2. Server vygeneruje 6-miestny OTP (`crypto.getRandomValues`) a odošle ho cez SMTP2GO
 3. Používateľ zadá OTP kód
-4. Server overí kód a vráti JWT token
+4. Server overí kód a vráti JWT token (platnosť 365 dní)
 5. Frontend uloží token do `localStorage`
 6. Každý API request obsahuje `Authorization: Bearer {token}`
 
@@ -300,41 +338,40 @@ JWT payload obsahuje:
 - `role` - 'user' alebo 'office_assistant'
 - `tokenVersion` - verzia tokenu (pre invalidáciu)
 
+JWT knižnica: **jose** (kompatibilná s Web Crypto API v Workers)
+
 ---
 
 ## Migrácie
 
-Migrácie sa spúšťajú automaticky pri štarte backendu:
+Migrácie sa spravujú cez Wrangler CLI:
 
 ```
-backend/db/migrations/
-├── 001_initial_schema.sql      # Základné tabuľky
-├── 002_seed_data.sql           # Testovacie dáta
-├── 003_stock_adjustments.sql   # Inventúra
-├── 004_shortage_acknowledgements.sql  # Upozornenia na manko
-├── 005_stock_write_off.sql     # Odpisy
-├── 006_user_name.sql           # Meno používateľa
-└── 007_shortage_contributions.sql     # Príspevky na manko
+worker/db/migrations/
+├── 001_schema.sql    # Kompletná schéma (všetky tabuľky + indexy)
+└── 002_seed.sql      # Testovacie dáta
 ```
 
-Tabuľka `_migrations` sleduje aplikované migrácie.
+Príkazy:
+- `wrangler d1 execute aston-bufet-db --local --file=db/migrations/001_schema.sql` - lokálne
+- `wrangler d1 execute aston-bufet-db --remote --file=db/migrations/001_schema.sql` - produkcia
 
 ---
 
-## Environment Variables
+## Environment Variables / Bindings
 
-### Backend
+### Worker (wrangler.toml + secrets)
 
-| Premenná | Popis | Default |
-|----------|-------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | - |
-| `JWT_SECRET` | Secret pre JWT podpisy | - |
-| `PORT` | Port servera | 3001 |
-| `CORS_ORIGIN` | Povolený origin | http://localhost:3000 |
-| `SMTP_MODE` | `smtp` alebo `console` | console |
-| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | SMTP konfigurácia | - |
-| `RUN_MIGRATIONS` | Spustiť migrácie pri štarte | true |
-| `OFFICE_ASSISTANT_EMAILS` | Emaily s office_assistant rolou | - |
+| Premenná | Typ | Popis |
+|----------|-----|-------|
+| `DB` | D1 Binding | Cloudflare D1 databáza |
+| `JWT_SECRET` | Secret | Secret pre JWT podpisy |
+| `SMTP_API_KEY` | Secret | API kľúč pre SMTP2GO |
+| `CORS_ORIGIN` | Var | Povolený origin (napr. `https://bufet.aston.sk`) |
+| `SMTP_MODE` | Var | `production` alebo `console` |
+| `SMTP_FROM` | Var | Odosielateľ emailov |
+| `OFFICE_ASSISTANT_EMAILS` | Var | Suffix emailov s rolou office_assistant |
+| `ALLOWED_EMAIL_DOMAINS` | Var | Povolené emailové domény |
 
 ### Frontend (build-time)
 
