@@ -3,7 +3,7 @@ main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
 [vars]
-CORS_ORIGIN = "https://aston-bufet.pages.dev"
+CORS_ORIGIN = "https://bufet.aston.sk"
 SMTP_MODE = "console"
 OFFICE_ASSISTANT_EMAILS = "assistans@aston.sk"
 ALLOWED_EMAIL_DOMAINS = "aston.sk"
