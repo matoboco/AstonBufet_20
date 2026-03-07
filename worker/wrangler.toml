@@ -4,14 +4,14 @@ compatibility_date = "2024-12-01"
 
 [vars]
 CORS_ORIGIN = "https://bufet.aston.sk"
-SMTP_MODE = "console"
+SMTP_MODE = "production"
 OFFICE_ASSISTANT_EMAILS = "assistans@aston.sk"
 ALLOWED_EMAIL_DOMAINS = "aston.sk"
 
 # Secrets (set via `wrangler secret put`):
 # JWT_SECRET
 # SMTP_API_KEY
-# SMTP_FROM
+SMTP_FROM = "Aston Bufet 2.0 <aston-bufet@grapestack.sk>"
 
 [[d1_databases]]
 binding = "DB"
