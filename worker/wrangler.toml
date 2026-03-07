@@ -20,6 +20,8 @@ database_id = "f94c8d88-ab08-41c6-ba9d-74793a3cefd3"
 
 migrations_dir = "db/migrations"
 
-# Cron trigger: 1st day of month at 9:00 UTC (adjust for Europe/Bratislava)
+# Cron triggers:
+# - 1st day of month at 8:00 UTC: payment reminders
+# - Daily at midnight UTC: cleanup expired OTP codes
 [triggers]
-crons = ["0 8 1 * *"]
+crons = ["0 8 1 * *", "0 0 * * *"]
